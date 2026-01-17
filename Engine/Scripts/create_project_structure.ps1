@@ -11,8 +11,10 @@ $dirs = @(
 "Binaries\Win64",
 "Scripts"
 )
+
 foreach ($d in $dirs) {
   $p = Join-Path $Root $d
   New-Item -ItemType Directory -Force -Path $p | Out-Null
 }
+
 Write-Host "Done."
