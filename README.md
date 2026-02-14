@@ -1,9 +1,8 @@
 TX Engine — Advanced Neural-Hybrid Game Engine
 Next-Generation Rendering, Down to PS3-Class Hardware
 
-///////////////////////////////////////////////
-- Descripción General
-///////////////////////////////////////////////
+
+Descripción General
 
 TX Engine es un motor gráfico experimental de ultra-alto rendimiento diseñado para escalar desde hardware moderno (PS5/RTX/Series X) hasta dispositivos altamente limitados (PS3 y móviles con potencia similar).
 Su arquitectura interna combina técnicas neuronales, algoritmos adaptativos y optimizaciones basadas en física real para alcanzar una calidad visual y una eficiencia sin precedentes.
@@ -28,9 +27,8 @@ HSR — Hierarchical Smart Reduction
 
 TX es capaz de correr escenas complejas con millones de polígonos… y aun así descender dinámicamente a configuraciones que funcionan en hardware equivalente a PS3.
 
-///////////////////////////////////////////////
+
 - Características Clave
-///////////////////////////////////////////////
 
 - Neural Motion Compression (NMC)
 
@@ -211,4 +209,5 @@ TX PROTECTIVE LICENSE (TXPL v1.5)
 ///////////////////////////////////////////////
 
 Actively In Development
+
 Toda la arquitectura está diseñada para crecer y soportar nuevos render passes, features de IA y optimizaciones futuras.
