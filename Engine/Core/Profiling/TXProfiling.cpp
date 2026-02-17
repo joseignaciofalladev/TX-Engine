@@ -1,26 +1,21 @@
-// ============================================================
 // TX Engine — Technologic Experience Engine
 // Ultra-Lightweight CPU/GPU Profiler
-// ============================================================
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <chrono>
 
-// ------------------------------------------------------------
 // Filosofía
-// ------------------------------------------------------------
+
 // - Sin dependencias externas
 // - Sin asignaciones dinámicas
 // - Coste casi cero cuando está desactivado
 // - Diseñado para PS3 / hardware débil
 // - Pensado para ingeniería, no marketing
-// ------------------------------------------------------------
 
 namespace TX
 {
-
 // Configuración
 constexpr uint32_t TX_MAX_PROFILER_ZONES = 256;
 constexpr uint32_t TX_MAX_FRAMES        = 120;
@@ -167,4 +162,5 @@ void GameLoop()
     TX_PROFILE_FRAME_END();
     TX::Profiler::Instance().DumpLastFrame();
 }
+
 }
