@@ -1,22 +1,15 @@
-// ============================================================
-// TX Engine — Technologic Experience Engine
 // GPU Profiler (Backend-agnostic core)
-// ============================================================
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 
-// ------------------------------------------------------------
 // Filosofía
-// ------------------------------------------------------------
 // - No depende de API gráfica concreta (Vulkan, GNM, OpenGL)
 // - El backend inyecta timestamps
 // - Sin asignaciones dinámicas
 // - Coste cero si está desactivado
 // - Diseñado para hardware limitado (PS3 / PS4 / low-end PC)
-// ------------------------------------------------------------
-
 namespace TX
 {
 
