@@ -103,12 +103,9 @@ public:
     {
         uint32_t readIndex = (WriteIndex + TX_GPU_LATENCY - 1) % TX_GPU_LATENCY;
         GPUProfilerFrame& F = Frames[readIndex];
-
         if (!F.Ready || !Backend)
             return;
-
         printf("\n[TXProfilerGPU] GPU timings:\n");
-
         for (uint32_t i = 0; i < F.ZoneCount; ++i)
         {
             GPUProfilerZone& Z = F.Zones[i];
@@ -120,7 +117,6 @@ public:
                        Z.Duration / 1e6);
             }
         }
-
         F.Ready = false;
     }
 
@@ -153,7 +149,6 @@ public:
         GPUProfiler::Instance().EndZone();
     }
 };
-
 // Macros
 #define TX_GPU_PROFILE_FRAME_BEGIN() TX::GPUProfiler::Instance().BeginFrame()
 #define TX_GPU_PROFILE_FRAME_END()   TX::GPUProfiler::Instance().EndFrame()
