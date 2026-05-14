@@ -7,13 +7,11 @@
 #include <chrono>
 
 // Filosofía
-
 // - Sin dependencias externas
 // - Sin asignaciones dinámicas
 // - Coste casi cero cuando está desactivado
 // - Diseñado para PS3 / hardware débil
 // - Pensado para ingeniería, no marketing
-
 namespace TX
 {
 // Configuración
@@ -29,8 +27,7 @@ static inline uint64_t GetTimeNS()
 }
 
 // Zona de profiling
-struct ProfilerZone
-{
+struct ProfilerZone{
     const char* Name;
     uint64_t StartTime;
     uint64_t Accumulated;
@@ -38,9 +35,7 @@ struct ProfilerZone
 };
 
 // Frame profiling
-
-struct ProfilerFrame
-{
+struct ProfilerFrame{
     ProfilerZone Zones[TX_MAX_PROFILER_ZONES];
     uint32_t ZoneCount;
     uint64_t FrameStart;
@@ -48,8 +43,7 @@ struct ProfilerFrame
 };
 
 // Profiler principal
-class Profiler
-{
+class Profiler{
 public:
     static Profiler& Instance()
     {
@@ -146,14 +140,12 @@ void Render()
     // Renderizado...
 }
 
-void UpdateAI()
-{
+void UpdateAI(){
     TX_PROFILE_SCOPE("AI");
     // Lógica IA...
 }
 
-void GameLoop()
-{
+void GameLoop(){
     TX_PROFILE_FRAME_BEGIN();
 
     UpdateAI();
@@ -162,5 +154,4 @@ void GameLoop()
     TX_PROFILE_FRAME_END();
     TX::Profiler::Instance().DumpLastFrame();
 }
-
 }
