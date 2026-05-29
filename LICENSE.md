@@ -1,174 +1,186 @@
-TX PROTECTIVE LICENSE (TXPL v1.5)
-© 2025, [JOSE IGNACIO FALLA GARCIA / PIXELFORGEESP]. Todos los derechos reservados.
-Licencia estricta, propietaria y de uso regulado.
-1. Propiedad absoluta
+# TX PROTECTIVE LICENSE (TXPL v0.5)
 
-El motor TX Engine, incluyendo todo su código fuente, documentación, shaders, algoritmos, arquitectura, técnicas internas, nomenclatura, optimizaciones, estructuras de datos y sistemas auxiliares, es propiedad exclusiva del autor.
+Copyright © 2026
+**JOSE IGNACIO FALLA GARCIA / PIXELFORGEESP**
+All Rights Reserved.
 
-El Usuario no adquiere ningún derecho, explícito ni implícito, sobre el Software salvo los que se otorgan en este documento.
+---
 
-2. Derechos otorgados (limitados y revocables)
+# 1. Introduction
 
-Se concede un permiso revocable y no exclusivo, únicamente para:
+This license governs the use, access, study, modification, and distribution of **TX Engine** and all associated materials, including but not limited to:
 
-✔ Estudiar el código
-✔ Compilar el motor en un entorno personal
-✔ Crear prototipos, demos o experimentos no comerciales
-✔ Usar el motor con fines educativos o de investigación independiente
+* Source code
+* Rendering systems
+* Internal architectures
+* Shader pipelines
+* Algorithms
+* Documentation
+* Tools
+* Asset processing systems
+* Experimental rendering technologies
 
-Estos permisos no incluyen autorización para redistribuir, copiar públicamente o integrar partes del motor en otros proyectos.
+TX Engine is proprietary software protected under applicable copyright, intellectual property, and trade secret laws.
 
-3. Restricciones estrictas
-3.1. Uso comercial prohibido
+By accessing, compiling, studying, or using the Software, the User agrees to be bound by the terms of this License.
 
-Queda estrictamente prohibido:
+---
 
-Usar TX Engine en cualquier producto comercial
+# 2. Ownership
 
-Monetizar juegos, herramientas o servicios basados en el motor
+All rights, title, and interest in TX Engine remain the exclusive property of the Author.
 
-Integrar el motor en pipelines de estudio sin contrato previo
+No ownership rights are transferred to the User under this License.
 
-Mostrar TX Engine en ferias, eventos o presentaciones con fines comerciales
+The User receives only a limited, revocable, non-exclusive, non-transferable permission to use the Software strictly under the conditions described herein.
 
-Solo se permite mediante acuerdo comercial firmado.
+---
 
-3.2. Prohibición absoluta de reutilización tecnológica
+# 3. Permitted Use
 
-El Usuario NO PUEDE copiar, replicar, reimplementar o basarse en ninguna técnica, sistema o algoritmo del motor, incluyendo:
+The User may:
 
-NMC — Neural Motion Compression
+* Study the source code for personal or educational purposes
+* Compile the engine in a private environment
+* Create non-commercial prototypes or research projects
+* Experiment with rendering techniques for learning purposes
+* Modify the engine privately for internal experimentation
 
-VUART — Vector Unit Adaptive Rendering Technique
+All permitted use is strictly limited to non-commercial activity.
 
-DART — Distributed Adaptive Rendering Threads
+---
 
-NTFS — Neural Texture Fusion System
+# 4. Restrictions
 
-ASC — Adaptive Shadow Cascades
+Unless explicitly authorized in writing by the Author, the User may NOT:
 
-HSMG — Hyper-Smart Material Graph
+## 4.1 Commercial Use
 
-PASS-Net — Predictive Autonomous Safety System
+* Use TX Engine in commercial products
+* Sell games, software, services, or applications built with TX Engine
+* Monetize projects using the engine directly or indirectly
+* Integrate TX Engine into professional studio pipelines
+* Use TX Engine in commercial demonstrations, showcases, or exhibitions
 
-Ni completa, ni parcialmente, ni en forma modificada, ni inspirada, ni “equivalente”.
+Commercial licensing requires a separate written agreement.
 
-La ingeniería inversa conceptual está prohibida.
+---
 
-3.3. Prohibida la redistribución
+## 4.2 Redistribution
 
-El Usuario NO puede:
+The User may NOT:
 
-Subir el motor a otros repositorios
+* Redistribute the source code
+* Publish forks or modified versions
+* Upload the engine to third-party repositories
+* Distribute binaries or compiled builds
+* Repackage the engine within SDKs or frameworks
+* Share proprietary internal systems publicly
 
-Distribuir binarios, forks, builds o versiones modificadas
+The official repository is the only authorized distribution source unless otherwise approved in writing.
 
-Entregar el código a terceros
+---
 
-Empaquetar el motor dentro de otros SDKs
+## 4.3 Technology Reuse
 
-Compartir públicamente derivados del motor
+The User may NOT copy or substantially reproduce proprietary systems, architectures, or implementation techniques originating from TX Engine, including but not limited to:
 
-El repositorio oficial es el único lugar autorizado.
+* NMC — Neural Motion Compression
+* VUART — Vector Unit Adaptive Rendering Technique
+* DART — Distributed Adaptive Rendering Threads
+* NTFS — Neural Texture Fusion System
+* ASC — Adaptive Shadow Cascades
+* HSMG — Hyper-Smart Material Graph
+* PASS-Net — Predictive Autonomous Safety System
 
-3.4. Prohibida la integración externa
+This restriction applies to direct source reuse, derivative implementations, or substantially similar proprietary reproductions derived from TX Engine source access.
 
-No se permite:
+Nothing in this clause restricts independent development created without use of TX Engine proprietary code or confidential implementation details.
 
-Integrar sistemas del motor en otros engines
+---
 
-Portar módulos a Unity, Unreal, Godot, CryEngine, etc.
+## 4.4 Engine Integration
 
-Reutilizar estructuras, shaders o sistemas neuronales
+Without written authorization, the User may NOT:
 
-4. Propiedad intelectual reforzada
+* Port TX Engine systems into third-party engines
+* Integrate TX technologies into Unity, Unreal Engine, Godot, CryEngine, or similar frameworks
+* Reuse internal rendering pipelines or proprietary shader systems
+* Extract or reuse neural rendering modules independently
 
-Las técnicas avanzadas del motor están protegidas bajo:
+---
 
-Copyright
+# 5. Intellectual Property
 
-Derecho de autor
+TX Engine and all associated technologies are protected by:
 
-Derechos sobre código fuente
+* Copyright law
+* Intellectual property law
+* Trade secret protections
+* Proprietary software protections
+* Source code ownership rights
 
-Derechos sobre algoritmos propietarios
+All proprietary rendering architectures, internal systems, optimization methods, and implementation details remain protected even when visible within source code access.
 
-Protección contra copia conceptual (trade secret)
+---
 
-Ninguna parte se cede al Usuario excepto para lectura.
+# 6. Termination
 
-5. Clausula de no competencia tecnológica
+This License terminates automatically if the User violates any term contained herein.
 
-El Usuario no puede:
+Upon termination, the User must immediately:
 
-Crear un motor gráfico basado parcial o totalmente en principios derivados de TX Engine
+* Cease all use of TX Engine
+* Destroy all local copies of the Software
+* Remove all derived internal builds
+* Stop any ongoing unauthorized distribution or deployment
 
-Diseñar técnicas equivalentes a las del motor durante 10 años
+Unauthorized use after termination may constitute copyright infringement and violation of applicable intellectual property laws.
 
-Utilizar el conocimiento del código para desarrollar tecnología competidora
+---
 
-Esto aplica tanto a individuos como estudios.
+# 7. Disclaimer of Warranty
 
-6. Terminación automática sin previo aviso
+TX Engine is provided **“AS IS”**, without warranty of any kind, express or implied.
 
-La licencia queda inmediatamente revocada si:
+The Author makes no guarantees regarding:
 
-Se usa el motor comercialmente sin autorización
+* Stability
+* Performance
+* Reliability
+* Compatibility
+* Fitness for a particular purpose
 
-Se redistribuye o filtra código interno
+Use of the Software is entirely at the User’s own risk.
 
-Se copia alguna técnica
+---
 
-Se integra parte del motor en otro sistema
+# 8. Limitation of Liability
 
-Se intenta monetizar directa o indirectamente su tecnología
+To the maximum extent permitted by law, the Author shall not be liable for:
 
-Se usa con fines de ingeniería inversa
+* Direct damages
+* Indirect damages
+* Financial losses
+* Data loss
+* Technical failures
+* Business interruption
+* Consequential damages
 
-Tras la revocación:
+arising from the use or inability to use TX Engine.
 
-➤ El Usuario debe eliminar todas las copias del software
-➤ Ninguna versión del motor podrá seguir siendo utilizada
-➤ Se considerará infracción grave de propiedad intelectual
+---
 
-7. Limitación severa de responsabilidad
+# 9. Governing Law
 
-TX Engine se entrega “TAL CUAL”, sin garantía de ningún tipo.
-El autor no asume ningún daño:
+This License shall be governed by and interpreted under the laws applicable in the Author’s jurisdiction.
 
-Material
+Any disputes arising from this License shall be resolved exclusively through the competent courts of said jurisdiction.
 
-Económico
+---
 
-Técnico
+# 10. Final Statement
 
-Legal
+TX Engine is an experimental rendering technology platform created for advanced graphics research, scalable rendering systems, and neural-assisted optimization architectures.
 
-Moral
-
-Derivado o incidental
-
-Ni asumirá responsabilidad por usos indebidos o violación de esta licencia.
-
-8. Licencias comerciales
-
-Toda explotación comercial debe negociarse directamente con el autor:
-
-[tu email / contacto profesional]
-
-Se ofrecen modalidades:
-
-Indie Licenciada
-
-Profesional / Studio
-
-Enterprise AAA
-
-Licencias exclusivas por tecnología
-
-Cada una requiere contrato legal independiente.
-
-9. Jurisdicción y validez legal
-
-Esta licencia se rige por las leyes del país del autor.
-Cualquier conflicto se tratará exclusivamente bajo su jurisdicción.
+Unauthorized commercial exploitation, redistribution, or proprietary technology extraction is strictly prohibited.
