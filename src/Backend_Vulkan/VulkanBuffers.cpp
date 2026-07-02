@@ -118,9 +118,11 @@ void EngineApplication::createUniformBuffers()
 
     for (auto& gameObject : gameObjects)
     {
+        gameObject.uniformBuffers.clear();
+        gameObject.uniformBuffersMemory.clear();
+        gameObject.uniformBuffersMapped.clear();
+
         gameObject.uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
-        gameObject.uniformBuffersMemory.reserve(MAX_FRAMES_IN_FLIGHT);
-        gameObject.uniformBuffersMapped.reserve(MAX_FRAMES_IN_FLIGHT);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
