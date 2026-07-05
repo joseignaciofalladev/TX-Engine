@@ -24,65 +24,29 @@
 void EngineApplication::createSyncObjects()
 {
     imageAvailableSemaphores.clear();
-    renderFinishedSemaphores.clear();
     computeFinishedSemaphores.clear();
-    computeFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.clear();
     inFlightFences.clear();
 
     imageAvailableSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+    computeFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.reserve(swapChainImages.size());
     inFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    const vk::SemaphoreCreateInfo semaphoreInfo{};
+    const vk::FenceCreateInfo fenceInfo{.flags = vk::FenceCreateFlagBits::eSignaled};
+
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
-        imageAvailableSemaphores.emplace_back(device, vk::SemaphoreCreateInfo{});
-        computeFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo{});
-        inFlightFences.emplace_back(device, vk::FenceCreateInfo{.flags = vk::FenceCreateFlagBits::eSignaled});
+        imageAvailableSemaphores.emplace_back(device, semaphoreInfo);
+        computeFinishedSemaphores.emplace_back(device, semaphoreInfo);
+        inFlightFences.emplace_back(device, fenceInfo);
     }
 
-    for (size_t i = 0;i < swapChainImages.size();i++)
+    for (uint32_t i = 0; i < static_cast<uint32_t>(swapChainImages.size()); ++i)
     {
-        renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo{});
+        renderFinishedSemaphores.emplace_back(device, semaphoreInfo);
     }
-}
-
-void EngineApplication::updateUniformBuffer(uint32_t currentFrame)
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    static auto lastFrameTime = startTime;
-    auto        currentTime = std::chrono::high_resolution_clock::now();
-    float       time = std::chrono::duration<float>(currentTime - startTime).count();
-    float       deltaTime = std::chrono::duration<float>(currentTime - lastFrameTime).count();
-    lastFrameTime = currentTime;
-
-    // Camera and projection matrices (shared by all objects)
-    glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height), 0.1f, 20.0f);
-    proj[1][1] *= -1;
-
-    // Update uniform buffers for each object
-    for (auto& gameObject : gameObjects)
-    {
-        // Apply continuous rotation to the object based on frame time
-        const float rotationSpeed = 0.5f;                          // Rotation speed in radians per second
-        gameObject.rotation.y += rotationSpeed * deltaTime;        // Slow rotation around Y axis scaled by frame time
-
-        // Get the model matrix for this object
-        glm::mat4 model = gameObject.getModelMatrix();
-
-        // Create and update the UBO
-        GraphicsUBO ubo{
-            .model = model,
-            .view = view,
-            .proj = proj };
-
-        // Copy the UBO data to the mapped memory
-        memcpy(gameObject.uniformBuffersMapped[frameIndex], &ubo, sizeof(ubo));
-    }
-    ComputeUBO computeUBO{};
-    computeUBO.deltaTime = deltaTime;
-
-    memcpy(computeUniformBuffersMapped[currentFrame], &computeUBO, sizeof(ComputeUBO));
 }
 
 // Renderiza un frame completo.
