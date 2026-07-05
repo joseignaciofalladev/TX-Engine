@@ -119,26 +119,35 @@ void EngineApplication::createCommandBuffers()
 void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
 {
     auto& commandBuffer = commandBuffers[frameIndex];
-    commandBuffer.begin({});
+
+    commandBuffer.reset();
+
+    const vk::CommandBufferBeginInfo beginInfo{
+        .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+    };
+
+    commandBuffer.begin(beginInfo);
+
+    auto& imageLayout = swapChainLayouts[imageIndex];
 
     transitionImageLayout(
         commandBuffer,
         swapChainImages[imageIndex],
-        swapChainLayouts[imageIndex],
+        imageLayout,
         vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageAspectFlagBits::eColor, 0, 1);
+        vk::ImageAspectFlagBits::eColor,
+        0,
+        1);
 
-    swapChainLayouts[imageIndex] = vk::ImageLayout::eColorAttachmentOptimal;
+    imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
-    vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
-    vk::ClearValue clearDepth = vk::ClearDepthStencilValue(1.0f, 0);
+    const vk::ClearValue clearColor =
+        vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
 
-    std::array<vk::ClearValue, 2> clearValues = {
-        clearColor,
-        clearDepth
-    };
+    const vk::ClearValue clearDepth =
+        vk::ClearDepthStencilValue(1.0f, 0);
 
-    vk::RenderingAttachmentInfo colorAttachment{
+    const vk::RenderingAttachmentInfo colorAttachment{
         .imageView = colorImageView,
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
 
@@ -151,15 +160,16 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
         .clearValue = clearColor
     };
 
-    vk::RenderingAttachmentInfo depthAttachment{
+    const vk::RenderingAttachmentInfo depthAttachment{
         .imageView = depthImageView,
         .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eDontCare,
         .clearValue = clearDepth
     };
 
-    vk::RenderingInfo renderingInfo{
+    const vk::RenderingInfo renderingInfo{
         .renderArea = {{0, 0}, swapChainExtent},
         .layerCount = 1,
         .colorAttachmentCount = 1,
@@ -169,29 +179,50 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
 
     commandBuffer.beginRendering(renderingInfo);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
+    commandBuffer.bindPipeline(
+        vk::PipelineBindPoint::eGraphics,
+        *graphicsPipeline);
 
     commandBuffer.setViewport(
         0,
         vk::Viewport{
-            0.0f, 0.0f,
+            0.0f,
+            0.0f,
             static_cast<float>(swapChainExtent.width),
             static_cast<float>(swapChainExtent.height),
-            0.0f, 1.0f
-        }
-    );
+            0.0f,
+            1.0f
+        });
 
-    commandBuffer.setScissor(0, vk::Rect2D{ {0, 0}, swapChainExtent });
-    commandBuffer.bindVertexBuffers(0, *vertexBuffer, { 0 });
-    commandBuffer.bindIndexBuffer(*indexBuffer, 0, vk::IndexTypeValue<decltype(indices)::value_type>::value);
+    commandBuffer.setScissor(
+        0,
+        vk::Rect2D{ {0, 0}, swapChainExtent });
 
-    // Draw each object with its own descriptor set
-    for (const auto& gameObject : gameObjects){
-        // Bind the descriptor set for this object
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipelineLayout, 0, *gameObject.descriptorSets[frameIndex], nullptr);
+    commandBuffer.bindVertexBuffers(
+        0,
+        *vertexBuffer,
+        { 0 });
 
-        // Draw the object
-        commandBuffer.drawIndexed(indices.size(), 1, 0, 0, 0);
+    commandBuffer.bindIndexBuffer(
+        *indexBuffer,
+        0,
+        vk::IndexTypeValue<decltype(indices)::value_type>::value);
+
+    for (const auto& gameObject : gameObjects)
+    {
+        commandBuffer.bindDescriptorSets(
+            vk::PipelineBindPoint::eGraphics,
+            *pipelineLayout,
+            0,
+            *gameObject.descriptorSets[frameIndex],
+            nullptr);
+
+        commandBuffer.drawIndexed(
+            static_cast<uint32_t>(indices.size()),
+            1,
+            0,
+            0,
+            0);
     }
 
     commandBuffer.bindPipeline(
@@ -204,7 +235,7 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
         { 0 });
 
     commandBuffer.draw(
-        PARTICLE_COUNT,
+        static_cast<uint32_t>(PARTICLE_COUNT),
         1,
         0,
         0);
@@ -214,11 +245,13 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
     transitionImageLayout(
         commandBuffer,
         swapChainImages[imageIndex],
-        vk::ImageLayout::eColorAttachmentOptimal,
+        imageLayout,
         vk::ImageLayout::ePresentSrcKHR,
-        vk::ImageAspectFlagBits::eColor, 0, 1);
+        vk::ImageAspectFlagBits::eColor,
+        0,
+        1);
 
-    swapChainLayouts[imageIndex] = vk::ImageLayout::ePresentSrcKHR;
+    imageLayout = vk::ImageLayout::ePresentSrcKHR;
 
     commandBuffer.end();
 }
