@@ -2,49 +2,70 @@
 
 void EngineApplication::initThreads()
 {
-	threadCount = std::thread::hardware_concurrency();
+	uint32_t hwThreads = std::thread::hardware_concurrency();
 
-	if (threadCount == 0)
-		threadCount = 4;
+	if (hwThreads == 0)
+		hwThreads = 4;
 
-	threadCount = std::min(threadCount, 8u);
+	threadCount = std::max(1u, hwThreads - 1);
+
+	// Nunca más workers que partículas
+	threadCount = std::min(threadCount, PARTICLE_COUNT);
+
+	// Opcional: limitar por trabajo útil
+	constexpr uint32_t MinParticlesPerThread = 1024;
+
+	uint32_t desired = (PARTICLE_COUNT + MinParticlesPerThread - 1) / MinParticlesPerThread;
+
+	threadCount = std::clamp(desired, 1u, threadCount);
 
 	std::cout << "Initializing " << threadCount << " worker threads\n";
 
-	shouldExit = false;
+	shouldExit.store(false, std::memory_order_release);
 
 	threadWorkReady = std::vector<std::atomic<bool>>(threadCount);
 	threadWorkDone = std::vector<std::atomic<bool>>(threadCount);
 
 	for (uint32_t i = 0; i < threadCount; i++)
 	{
-		threadWorkReady[i].store(false);
-		threadWorkDone[i].store(true);
+		threadWorkReady[i].store(false, std::memory_order_relaxed);
+		threadWorkDone[i].store(true, std::memory_order_relaxed);
 	}
 
 	initThreadResources();
 
+	particleGroups.clear();
 	particleGroups.resize(threadCount);
 
-	const uint32_t particlesPerThread = PARTICLE_COUNT / threadCount;
+	const uint32_t particlesPerThread = (PARTICLE_COUNT + threadCount - 1) / threadCount;
 
-	for (uint32_t i = 0; i < threadCount; i++)
+	for (uint32_t i = 0; i < threadCount; ++i)
 	{
-		particleGroups[i].startIndex = i * particlesPerThread;
+		uint32_t start = i * particlesPerThread;
 
-		particleGroups[i].count =
-			(i == threadCount - 1)
-			? (PARTICLE_COUNT - particleGroups[i].startIndex)
-			: particlesPerThread;
+		uint32_t end = std::min(start + particlesPerThread, PARTICLE_COUNT);
 
-		std::cout
-			<< "Thread "
-			<< i
-			<< " processes particles "
-			<< particleGroups[i].startIndex
-			<< " -> "
-			<< particleGroups[i].startIndex + particleGroups[i].count - 1
-			<< '\n';
+		if (start >= PARTICLE_COUNT)
+		{
+			particleGroups[i].startIndex = PARTICLE_COUNT;
+			particleGroups[i].count = 0;
+		}
+		else
+		{
+			particleGroups[i].startIndex = start;
+			particleGroups[i].count = end - start;
+
+			std::cout
+				<< "Thread "
+				<< i
+				<< " processes particles "
+				<< particleGroups[i].startIndex
+				<< " -> "
+				<< (particleGroups[i].count
+					? particleGroups[i].startIndex + particleGroups[i].count - 1
+					: particleGroups[i].startIndex)
+				<< '\n';
+		}
 	}
 
 	workerThreads.clear();
@@ -63,41 +84,50 @@ void EngineApplication::initThreads()
 
 void EngineApplication::workerThreadFunc(uint32_t threadIndex)
 {
-	while (!shouldExit)
+	while (true)
 	{
-		{
-			std::unique_lock<std::mutex> lock(workCompleteMutex);
+		std::unique_lock<std::mutex> lock(workCompleteMutex);
 
-			workCompleteCv.wait(lock, [this, threadIndex]()
-				{
-					return shouldExit.load(std::memory_order_acquire) ||
-						threadWorkReady[threadIndex].load(std::memory_order_acquire);
-				});
+		workCompleteCv.wait(lock,
+			[this, threadIndex]
+			{
+				return shouldExit.load(std::memory_order_acquire) ||
+					threadWorkReady[threadIndex].load(std::memory_order_acquire);
+			});
 
-			if (shouldExit.load(std::memory_order_acquire)){break;}
-		}
+		if (shouldExit.load(std::memory_order_acquire))
+			return;
 
-		const ParticleGroup& group = particleGroups[threadIndex];
+		threadWorkReady[threadIndex].store(false, std::memory_order_release);
+
+		lock.unlock();
 
 		try
 		{
-			auto& cmdBuffer = resourceManager.getCommandBuffer(threadIndex);
-			recordComputeCommandBuffer(cmdBuffer, group.startIndex, group.count);
+			uint32_t frame = workerFrameIndex.load(std::memory_order_acquire);
+
+			auto& cmdBuffer = resourceManager.getCommandBuffer(threadIndex, frame);
+
+			const ParticleGroup& group = particleGroups[threadIndex];
+
+			recordComputeCommandBuffer(
+				cmdBuffer,
+				frame,
+				group.startIndex,
+				group.count);
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr
-				<< "Worker thread "
-				<< threadIndex
-				<< " failed: "
-				<< e.what()
-				<< '\n';
-			std::terminate();
+			std::lock_guard guard(workCompleteMutex);
+
+			if (!threadException)
+				threadException = std::current_exception();
 		}
 
-		threadWorkReady[threadIndex].store(false, std::memory_order_release);
+		lock.lock();
 		threadWorkDone[threadIndex].store(true, std::memory_order_release);
 
+		lock.unlock();
 		workCompleteCv.notify_all();
 	}
 }
