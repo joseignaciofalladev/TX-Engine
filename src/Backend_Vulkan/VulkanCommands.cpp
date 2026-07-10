@@ -128,6 +128,25 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
 
     commandBuffer.begin(beginInfo);
 
+    const vk::BufferMemoryBarrier2 computeToGraphicsBarrier{
+        .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+        .srcAccessMask = vk::AccessFlagBits2::eShaderStorageWrite,
+
+        .dstStageMask = vk::PipelineStageFlagBits2::eVertexInput,
+        .dstAccessMask = vk::AccessFlagBits2::eVertexAttributeRead,
+
+        .buffer = *shaderStorageBuffers[frameIndex],
+        .offset = 0,
+        .size = VK_WHOLE_SIZE
+    };
+
+    const vk::DependencyInfo dependencyInfo{
+        .bufferMemoryBarrierCount = 1,
+        .pBufferMemoryBarriers = &computeToGraphicsBarrier
+    };
+
+    commandBuffer.pipelineBarrier2(dependencyInfo);
+
     auto& imageLayout = swapChainLayouts[imageIndex];
 
     transitionImageLayout(
