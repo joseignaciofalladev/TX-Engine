@@ -145,7 +145,7 @@ void EngineApplication::createComputeCommandBuffers()
 	computeCommandBuffers = vk::raii::CommandBuffers(device, allocInfo);
 }
 
-void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdBuffer, uint32_t startIndex, uint32_t count)
+void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdBuffer, uint32_t frame, uint32_t startIndex, uint32_t count)
 {
 	cmdBuffer.reset();
 
@@ -161,7 +161,9 @@ void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdB
 		uint32_t count;
 	} pushConstants{ startIndex, count };
 
-	uint32_t groupCount = (count + 255) / 256;
+	constexpr uint32_t WorkgroupSize = 256;
+
+	const uint32_t groupCount = (count + WorkgroupSize - 1) / WorkgroupSize;
 
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, *computePipeline);
 
@@ -169,7 +171,7 @@ void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdB
 		vk::PipelineBindPoint::eCompute,
 		*computePipelineLayout,
 		0,
-		{ *computeDescriptorSets[frameIndex] },
+		*computeDescriptorSets[frame],
 		{});
 
 	cmdBuffer.pushConstants<PushConstants>(
@@ -178,7 +180,31 @@ void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdB
 		0,
 		pushConstants);
 
-	cmdBuffer.dispatch(groupCount, 1, 1);
+	if (groupCount > 0)
+	{
+		cmdBuffer.dispatch(groupCount, 1, 1);
+	}
+
+	/*
+	const vk::BufferMemoryBarrier2 barrier{
+		.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+		.srcAccessMask = vk::AccessFlagBits2::eShaderStorageWrite,
+
+		.dstStageMask = vk::PipelineStageFlagBits2::eVertexInput,
+		.dstAccessMask = vk::AccessFlagBits2::eVertexAttributeRead,
+
+		.buffer = *shaderStorageBuffers[frame],
+		.offset = 0,
+		.size = VK_WHOLE_SIZE
+	};
+
+	const vk::DependencyInfo dependency{
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &barrier
+	};
+
+	cmdBuffer.pipelineBarrier2(dependency);
+	*/
 
 	cmdBuffer.end();
 }
