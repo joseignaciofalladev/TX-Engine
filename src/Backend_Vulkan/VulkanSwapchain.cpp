@@ -119,8 +119,6 @@ void EngineApplication::createImageViews()
     */
 void EngineApplication::cleanupSwapChain()
 {
-    device.waitIdle();
-
     commandBuffers.clear();
 
     graphicsPipeline = nullptr;
@@ -129,8 +127,8 @@ void EngineApplication::cleanupSwapChain()
     particlePipeline = nullptr;
     particlePipelineLayout = nullptr;
 
-    computePipeline = nullptr;
-    computePipelineLayout = nullptr;
+    // computePipeline = nullptr;
+    // computePipelineLayout = nullptr;
 
     colorImageView = nullptr;
     colorImage = nullptr;
@@ -227,13 +225,21 @@ void EngineApplication::recreateSwapChain()
     device.waitIdle();
 
     cleanupSwapChain();
+
+    // Swapchain
     createSwapChain();
     createImageViews();
+
+    // Attachments
     createColorResources();
     createDepthResources();
+
+    // Pipelines
     createGraphicsPipeline();
     createParticlePipeline();
-    createComputePipeline();
+    // createComputePipeline();
+
+    // Command buffers
     createCommandBuffers();
 }
 
