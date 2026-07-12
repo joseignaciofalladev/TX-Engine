@@ -217,6 +217,8 @@ void EngineApplication::createLogicalDevice()
     {
         if ((queueFamilyProperties[qfpIndex].queueFlags &
             vk::QueueFlagBits::eGraphics) &&
+            (queueFamilyProperties[qfpIndex].queueFlags &
+                vk::QueueFlagBits::eCompute) &&
             physicalDevice.getSurfaceSupportKHR(
                 qfpIndex,
                 *surface))
