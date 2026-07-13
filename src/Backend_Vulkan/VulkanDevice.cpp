@@ -209,38 +209,61 @@ void EngineApplication::createLogicalDevice()
     auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
     constexpr uint32_t InvalidQueueIndex = UINT32_MAX;
-    uint32_t queueIndex = InvalidQueueIndex;
 
-    for (uint32_t qfpIndex = 0;
-        qfpIndex < queueFamilyProperties.size();
-        qfpIndex++)
+    uint32_t graphicsQueueIndex = InvalidQueueIndex;
+    uint32_t computeQueueIndex = InvalidQueueIndex;
+
+    // Buscar Graphics + Present
+    for (uint32_t i = 0; i < queueFamilyProperties.size(); ++i)
     {
-        if ((queueFamilyProperties[qfpIndex].queueFlags &
-            vk::QueueFlagBits::eGraphics) &&
-            (queueFamilyProperties[qfpIndex].queueFlags &
-                vk::QueueFlagBits::eCompute) &&
-            physicalDevice.getSurfaceSupportKHR(
-                qfpIndex,
-                *surface))
+        if ((queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics) &&
+            physicalDevice.getSurfaceSupportKHR(i, *surface))
         {
-            queueIndex = qfpIndex;
+            graphicsQueueIndex = i;
             break;
         }
     }
 
-    if (queueIndex == InvalidQueueIndex)
+    if (graphicsQueueIndex == InvalidQueueIndex)
     {
-        throw std::runtime_error(
-            "Could not find a queue for graphics and present");
+        throw std::runtime_error("Could not find graphics queue.");
+    }
+
+    // Buscar una Compute dedicada (sin Graphics)
+    for (uint32_t i = 0; i < queueFamilyProperties.size(); ++i)
+    {
+        if ((queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eCompute) &&
+            !(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics))
+        {
+            computeQueueIndex = i;
+            break;
+        }
+    }
+
+    // Si no existe, usar la gráfica
+    if (computeQueueIndex == InvalidQueueIndex)
+    {
+        computeQueueIndex = graphicsQueueIndex;
     }
 
     float queuePriority = 1.0f;
 
-    vk::DeviceQueueCreateInfo queueCreateInfo{
-        .queueFamilyIndex = queueIndex,
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+
+    queueCreateInfos.push_back({
+        .queueFamilyIndex = graphicsQueueIndex,
         .queueCount = 1,
         .pQueuePriorities = &queuePriority
-    };
+        });
+
+    if (computeQueueIndex != graphicsQueueIndex)
+    {
+        queueCreateInfos.push_back({
+            .queueFamilyIndex = computeQueueIndex,
+            .queueCount = 1,
+            .pQueuePriorities = &queuePriority
+            });
+    }
 
     // Base Features
     vk::PhysicalDeviceFeatures2 features{};
@@ -320,33 +343,21 @@ void EngineApplication::createLogicalDevice()
     // Device creation
     vk::DeviceCreateInfo deviceCreateInfo{
         .pNext = &features,
-
-        .queueCreateInfoCount = 1,
-        .pQueueCreateInfos = &queueCreateInfo,
-
-        .enabledExtensionCount =
-            static_cast<uint32_t>(
-                requiredDeviceExtension.size()),
-
-        .ppEnabledExtensionNames =
-            requiredDeviceExtension.data()
+        .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+        .pQueueCreateInfos = queueCreateInfos.data(),
+        .enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size()),
+        .ppEnabledExtensionNames = requiredDeviceExtension.data()
     };
 
-    device =
-        vk::raii::Device(
-            physicalDevice,
-            deviceCreateInfo);
+    device = vk::raii::Device(physicalDevice, deviceCreateInfo);
 
-    graphicsQueue =
-        vk::raii::Queue(
-            device,
-            queueIndex,
-            0);
+    graphicsQueue = vk::raii::Queue(device, graphicsQueueIndex, 0);
+    computeQueue = vk::raii::Queue(device, computeQueueIndex, 0);
 
-    graphicsQueueFamilyIndex = queueIndex;
-
-    std::cout << "Logical Device created successfully\n";
+    graphicsQueueFamilyIndex = graphicsQueueIndex;
+    computeQueueFamilyIndex = computeQueueIndex;
 }
+
 
 uint32_t EngineApplication::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const
 {
