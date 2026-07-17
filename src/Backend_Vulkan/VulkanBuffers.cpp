@@ -146,59 +146,86 @@ void EngineApplication::createUniformBuffers()
 
 void EngineApplication::createDescriptorPool()
 {
-    std::array<vk::DescriptorPoolSize, 3> poolSize{
-        vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer, MAX_OBJECTS * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
-        vk::DescriptorPoolSize{vk::DescriptorType::eCombinedImageSampler, MAX_OBJECTS * MAX_FRAMES_IN_FLIGHT},
-        vk::DescriptorPoolSize{vk::DescriptorType::eStorageBuffer,MAX_FRAMES_IN_FLIGHT * 2}
+    const uint32_t graphicsSets = MAX_OBJECTS * MAX_FRAMES_IN_FLIGHT;
+    const uint32_t computeSets = MAX_FRAMES_IN_FLIGHT;
+    const uint32_t totalSets = graphicsSets + computeSets;
+
+    const std::array<vk::DescriptorPoolSize, 3> poolSizes{
+        vk::DescriptorPoolSize{
+            vk::DescriptorType::eUniformBuffer,
+            graphicsSets + computeSets
+        },
+        vk::DescriptorPoolSize{
+            vk::DescriptorType::eCombinedImageSampler,
+            graphicsSets
+        },
+        vk::DescriptorPoolSize{
+            vk::DescriptorType::eStorageBuffer,
+            computeSets * 2
+        }
     };
-    vk::DescriptorPoolCreateInfo          poolInfo{.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-                                                   .maxSets = MAX_OBJECTS * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT,
-                                                   .poolSizeCount = static_cast<uint32_t>(poolSize.size()),
-                                                   .pPoolSizes = poolSize.data() };
+
+    const vk::DescriptorPoolCreateInfo poolInfo{
+        .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+        .maxSets = totalSets,
+        .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+        .pPoolSizes = poolSizes.data()
+    };
+
     descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
 }
 
 void EngineApplication::createDescriptorSets()
 {
-    // For each game object
+    const std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
+
     for (auto& gameObject : gameObjects)
     {
-        // Create descriptor sets for each frame in flight
-        std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
-        vk::DescriptorSetAllocateInfo        allocInfo{
-                   .descriptorPool = *descriptorPool,
-                   .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
-                   .pSetLayouts = layouts.data() };
+        vk::DescriptorSetAllocateInfo allocInfo{
+            .descriptorPool = *descriptorPool,
+            .descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
+            .pSetLayouts = layouts.data()
+        };
 
-        gameObject.descriptorSets.clear();
         gameObject.descriptorSets = device.allocateDescriptorSets(allocInfo);
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        for (uint32_t frame = 0;
+            frame < MAX_FRAMES_IN_FLIGHT;
+            frame++)
         {
             vk::DescriptorBufferInfo bufferInfo{
-                .buffer = *gameObject.uniformBuffers[i],
+                .buffer = *gameObject.uniformBuffers[frame].buffer,
                 .offset = 0,
-                .range = sizeof(GraphicsUBO) };
+                .range = sizeof(GraphicsUBO)
+            };
+
             vk::DescriptorImageInfo imageInfo{
                 .sampler = *textureSampler,
                 .imageView = *textureImageView,
-                .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
-            std::array descriptorWrites{
+                .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+            };
+
+            std::array<vk::WriteDescriptorSet, 2> writes{
+
                 vk::WriteDescriptorSet{
-                    .dstSet = *gameObject.descriptorSets[i],
+                    .dstSet = *gameObject.descriptorSets[frame],
                     .dstBinding = 0,
-                    .dstArrayElement = 0,
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eUniformBuffer,
-                    .pBufferInfo = &bufferInfo},
+                    .pBufferInfo = &bufferInfo
+                },
+
                 vk::WriteDescriptorSet{
-                    .dstSet = *gameObject.descriptorSets[i],
+                    .dstSet = *gameObject.descriptorSets[frame],
                     .dstBinding = 1,
-                    .dstArrayElement = 0,
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                    .pImageInfo = &imageInfo} };
-            device.updateDescriptorSets(descriptorWrites, {});
+                    .pImageInfo = &imageInfo
+                }
+
+            };
+
+            device.updateDescriptorSets(writes, {});
         }
     }
 }
