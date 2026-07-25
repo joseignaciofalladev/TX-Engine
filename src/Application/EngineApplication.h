@@ -532,4 +532,32 @@ private:
         uint32_t count;
     };
     std::vector<ParticleGroup> particleGroups;
+    std::exception_ptr threadException;
+    
+    vk::raii::Semaphore timelineSemaphore = nullptr;
+    uint64_t timelineValue = 0;
+    std::atomic<uint32_t> workerFrameIndex{ 0 };
+    
+    vk::raii::Queue computeQueue = nullptr;
+    
+    uint32_t computeQueueFamilyIndex = UINT32_MAX;
+    
+    struct UploadContext
+    {
+        vk::raii::CommandPool commandPool = nullptr;
+        vk::raii::CommandBuffer commandBuffer = nullptr;
+        vk::raii::Fence fence = nullptr;
+    };
+    
+    UploadContext uploadContext;
+    
+    std::vector<vk::raii::Buffer> objectStorageBuffers;
+    std::vector<vk::raii::DeviceMemory> objectStorageBuffersMemory;
+    std::vector<void*> objectStorageBuffersMapped;
+    
+    std::vector<vk::raii::Buffer> cameraUniformBuffers;
+    std::vector<vk::raii::DeviceMemory> cameraUniformBuffersMemory;
+    std::vector<void*> cameraUniformBuffersMapped;
+    
+    std::vector<vk::raii::DescriptorSet> graphicsDescriptorSets;
 };
