@@ -259,38 +259,24 @@ void EngineApplication::mainLoop()
 void EngineApplication::cleanup()
 {
     stopThreads();
-
-    if (*device)
-    {
-        device.waitIdle();
-    }
-
-    // Clean up resources in each GameObject
+    device.waitIdle();
     for (auto& gameObject : gameObjects)
     {
-        // Unmap memory
-        for (size_t i = 0; i < gameObject.uniformBuffersMemory.size(); i++)
+        for (auto& uniformBuffer : gameObject.uniformBuffers)
         {
-            if (gameObject.uniformBuffersMapped[i] != nullptr)
+            if (uniformBuffer.mapped != nullptr)
             {
-                gameObject.uniformBuffersMemory[i].unmapMemory();
+                uniformBuffer.memory.unmapMemory();
+                uniformBuffer.mapped = nullptr;
             }
         }
-
-        // Clear vectors to release resources
         gameObject.uniformBuffers.clear();
-        gameObject.uniformBuffersMemory.clear();
-        gameObject.uniformBuffersMapped.clear();
         gameObject.descriptorSets.clear();
     }
-
-    // Destruye la ventana.
     if (window)
     {
         glfwDestroyWindow(window);
         window = nullptr;
     }
-
-    // Libera GLFW completamente.
     glfwTerminate();
 }
