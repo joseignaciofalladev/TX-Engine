@@ -446,3 +446,35 @@ void EngineApplication::createFramebuffers()
         swapChainFramebuffers.emplace_back(device, framebufferInfo);
     }
 }
+
+void EngineApplication::createObjectStorageBuffers()
+{
+    vk::DeviceSize bufferSize =
+        sizeof(ObjectData) * gameObjects.size();
+
+    objectStorageBuffers.clear();
+    objectStorageBuffersMemory.clear();
+    objectStorageBuffersMapped.clear();
+
+    objectStorageBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
+    objectStorageBuffersMemory.reserve(MAX_FRAMES_IN_FLIGHT);
+    objectStorageBuffersMapped.reserve(MAX_FRAMES_IN_FLIGHT);
+
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        auto [buffer, memory] =
+            createBuffer(
+                bufferSize,
+                vk::BufferUsageFlagBits::eStorageBuffer,
+                vk::MemoryPropertyFlagBits::eHostVisible |
+                vk::MemoryPropertyFlagBits::eHostCoherent);
+
+        objectStorageBuffers.emplace_back(std::move(buffer));
+        objectStorageBuffersMemory.emplace_back(std::move(memory));
+
+        objectStorageBuffersMapped.push_back(
+            objectStorageBuffersMemory.back().mapMemory(
+                0,
+                bufferSize));
+    }
+}
