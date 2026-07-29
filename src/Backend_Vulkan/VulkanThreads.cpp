@@ -106,7 +106,7 @@ void EngineApplication::workerThreadFunc(uint32_t threadIndex)
 		{
 			uint32_t frame = workerFrameIndex.load(std::memory_order_acquire);
 
-			auto& cmdBuffer = resourceManager.getCommandBuffer(threadIndex, frame);
+			auto& cmdBuffer = resourceManager.getComputeCommandBuffer(threadIndex, frame);
 
 			const ParticleGroup& group = particleGroups[threadIndex];
 
@@ -134,19 +134,17 @@ void EngineApplication::workerThreadFunc(uint32_t threadIndex)
 
 void EngineApplication::stopThreads()
 {
-	shouldExit.store(true, std::memory_order_release);
-
-	for (uint32_t i = 0; i < threadCount; i++)
 	{
-		threadWorkDone[i].store(true, std::memory_order_release);
-		threadWorkReady[i].store(false, std::memory_order_release);
+		std::lock_guard lock(workCompleteMutex);
+		shouldExit.store(true, std::memory_order_release);
+		
+		for (uint32_t i = 0; i < threadCount; ++i)
+		{
+			threadWorkReady[i].store(false, std::memory_order_release);
+			threadWorkDone[i].store(true, std::memory_order_release);
+		}
 	}
-
-	// Notify all threads in case they're waiting on the condition variable
-	{
-		std::lock_guard<std::mutex> lock(workCompleteMutex);
-		workCompleteCv.notify_all();
-	}
+	workCompleteCv.notify_all();
 
 	for (auto& thread : workerThreads)
 	{
@@ -155,7 +153,6 @@ void EngineApplication::stopThreads()
 			thread.join();
 		}
 	}
-
 	workerThreads.clear();
 }
 
