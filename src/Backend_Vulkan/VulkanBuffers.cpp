@@ -315,21 +315,47 @@ void EngineApplication::loadModel()
     std::cout << "Reduccion: " << reduction << "%\n";
 }
 
-void EngineApplication::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::raii::Buffer& buffer, vk::raii::DeviceMemory& bufferMemory) const
+void EngineApplication::createBuffer(
+    vk::DeviceSize size,
+    vk::BufferUsageFlags usage,
+    vk::MemoryPropertyFlags properties,
+    vk::raii::Buffer& buffer,
+    vk::raii::DeviceMemory& bufferMemory) const
 {
-    vk::BufferCreateInfo bufferInfo{};
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+    const vk::BufferCreateInfo bufferInfo{
+        .size = size,
+        .usage = usage,
+        .sharingMode = vk::SharingMode::eExclusive
+    };
+
     buffer = vk::raii::Buffer(device, bufferInfo);
-    vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
-    vk::MemoryAllocateInfo allocInfo{};
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    const vk::MemoryRequirements memRequirements =
+        buffer.getMemoryRequirements();
+
+    vk::MemoryAllocateInfo allocInfo{
+        .allocationSize = memRequirements.size,
+        .memoryTypeIndex =
+            findMemoryType(
+                memRequirements.memoryTypeBits,
+                properties)
+    };
+
+    // Permitir obtener la dirección GPU del buffer
+    vk::MemoryAllocateFlagsInfo allocFlagsInfo{};
+
+    if (usage & vk::BufferUsageFlagBits::eShaderDeviceAddress)
+    {
+        allocFlagsInfo.flags =
+            vk::MemoryAllocateFlagBits::eDeviceAddress;
+
+        allocInfo.pNext = &allocFlagsInfo;
+    }
+
     bufferMemory = vk::raii::DeviceMemory(device, allocInfo);
+
     buffer.bindMemory(bufferMemory, 0);
 }
-
 void EngineApplication::createRenderPass()
 {
     if (appInfo.dynamicRenderingSupported)
