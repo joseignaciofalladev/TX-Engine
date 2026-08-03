@@ -1,13 +1,26 @@
 #include "../Application/EngineApplication.h"
 #include <Renderer/GraphicsUBO.h>
 
-void EngineApplication::createDescriptorSetLayout()
-{
+void EngineApplication::createDescriptorSetLayout() {
     std::array<vk::DescriptorSetLayoutBinding, 2> bindings{
-        {{.binding = 0, .descriptorType = vk::DescriptorType::eUniformBuffer, .descriptorCount = 1, .stageFlags = vk::ShaderStageFlagBits::eVertex},
-         {.binding = 1, .descriptorType = vk::DescriptorType::eCombinedImageSampler, .descriptorCount = 1, .stageFlags = vk::ShaderStageFlagBits::eFragment}} };
+        {
+            {.binding = 0,
+            .descriptorType = vk::DescriptorType::eUniformBuffer,
+            .descriptorCount = 1,
+            .stageFlags = vk::ShaderStageFlagBits::eVertex},
+        {
+            .binding = 1,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+            .descriptorCount = 1,
+            .stageFlags = vk::ShaderStageFlagBits::eFragment}
+        }
+    };
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo{ .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() };
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{
+        .bindingCount = static_cast<uint32_t>(bindings.size()),
+        .pBindings = bindings.data()
+    };
+
     descriptorSetLayout = vk::raii::DescriptorSetLayout(device, layoutInfo);
 }
 
