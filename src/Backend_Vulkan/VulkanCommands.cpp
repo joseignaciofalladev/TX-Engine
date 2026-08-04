@@ -68,6 +68,42 @@ void EngineApplication::endSingleTimeCommands(vk::raii::CommandBuffer&& commandB
     }
 }
 
+void EngineApplication::createUploadContext()
+{
+    vk::CommandPoolCreateInfo poolInfo{
+        .flags =
+            vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+        .queueFamilyIndex = graphicsQueueFamilyIndex
+    };
+
+    uploadContext.commandPool =
+        vk::raii::CommandPool(device, poolInfo);
+
+    vk::CommandBufferAllocateInfo allocInfo{
+        .commandPool = *uploadContext.commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = 1
+    };
+
+    auto buffers =
+        device.allocateCommandBuffers(allocInfo);
+
+    uploadContext.commandBuffer =
+        std::move(buffers.front());
+
+    uploadContext.fence =
+        vk::raii::Fence(
+            device,
+            vk::FenceCreateInfo{});
+}
+
+void EngineApplication::destroyUploadContext()
+{
+    uploadContext.commandBuffer = nullptr;
+    uploadContext.commandPool = nullptr;
+    uploadContext.fence = nullptr;
+}
+
 // ============================================================================
     // Reserva un Command Buffer primario desde el Command Pool.
     //
