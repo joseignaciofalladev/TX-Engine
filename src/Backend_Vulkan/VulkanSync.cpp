@@ -49,6 +49,40 @@ void EngineApplication::createSyncObjects()
     }
 }
 
+void EngineApplication::updateUniformBuffer(uint32_t currentFrame)
+{
+    static auto lastFrameTime = std::chrono::high_resolution_clock::now();
+    const auto  currentTime = std::chrono::high_resolution_clock::now();
+    const float deltaTime = std::chrono::duration<float>(currentTime - lastFrameTime).count();
+    lastFrameTime = currentTime;
+
+    // Camera and projection matrices (shared by all objects)
+    const glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height), 0.1f, 20.0f);
+    proj[1][1] *= -1;
+
+    const float rotationSpeed = 0.5f;
+    // Update uniform buffers for each object
+    for (GameObject& object : gameObjects)
+    {
+        object.rotation.y += rotationSpeed * deltaTime;
+
+        GraphicsUBO* ubo =
+            reinterpret_cast<GraphicsUBO*>(
+                object.uniformBuffers[currentFrame].mapped);
+
+        ubo->model = object.getModelMatrix();
+        ubo->view = view;
+        ubo->proj = proj;
+    }
+
+    auto* compute =
+        reinterpret_cast<ComputeUBO*>(
+            computeUniformBuffersMapped[currentFrame]);
+
+    compute->deltaTime = deltaTime;
+}
+
 // Renderiza un frame completo.
 //
 // Flujo:
