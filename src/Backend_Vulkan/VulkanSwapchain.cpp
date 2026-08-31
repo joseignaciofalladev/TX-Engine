@@ -2,77 +2,46 @@
 
 void EngineApplication::createSwapChain()
 {
-    // Consultar las capacidades de presentación de la superficie.
-    // Estas capacidades incluyen límites de resolución, número de imágenes
-    // permitidas y transformaciones soportadas por la ventana.
-    vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+    auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
 
-    //------------------------------------------------------
-    // Choose swapchain settings
-    //------------------------------------------------------
     swapChainExtent = chooseSwapExtent(surfaceCapabilities);
+
+    swapChainSurfaceFormat = chooseSwapSurfaceFormat(physicalDevice.getSurfaceFormatsKHR(*surface));
+
+    auto presentMode = chooseSwapPresentMode(physicalDevice.getSurfacePresentModesKHR(*surface));
+
     uint32_t minImageCount = chooseSwapMinImageCount(surfaceCapabilities);
 
-    // Obtener todos los formatos de imagen compatibles con la superficie.
-    // Cada formato define el layout de color y el espacio de color.
-    std::vector<vk::SurfaceFormatKHR> availableFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-    swapChainSurfaceFormat = chooseSwapSurfaceFormat(availableFormats);
-
-    // Porque algunos drivers tienen un límite máximo.
-    if (surfaceCapabilities.maxImageCount > 0 &&
-        minImageCount > surfaceCapabilities.maxImageCount)
-    {
-        minImageCount = surfaceCapabilities.maxImageCount;
-    }
-
-    // Obtener los modos de presentación soportados.
-    // El modo de presentación determina cómo se sincronizan
-    // las imágenes renderizadas con la pantalla.
-    std::vector<vk::PresentModeKHR> availablePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-    vk::PresentModeKHR              presentMode = chooseSwapPresentMode(availablePresentModes);
-
-    // Crear la cadena de intercambio (swapchain).
-    // La swapchain gestionará las imágenes que se renderizarán
-    // y posteriormente se presentarán en pantalla.
-    vk::SwapchainCreateInfoKHR swapChainCreateInfo{ .surface = *surface,
-                                                   .minImageCount = minImageCount,
-                                                   .imageFormat = swapChainSurfaceFormat.format,
-                                                   .imageColorSpace = swapChainSurfaceFormat.colorSpace,
-                                                   .imageExtent = swapChainExtent,
-                                                   .imageArrayLayers = 1,
-                                                   .imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
-
-        // El modo exclusivo es más rápido cuando los gráficos y
-        // la presentación utilizan la misma familia de colas.
+    vk::SwapchainCreateInfoKHR createInfo{
+        .surface = *surface,
+        .minImageCount = minImageCount,
+        .imageFormat = swapChainSurfaceFormat.format,
+        .imageColorSpace = swapChainSurfaceFormat.colorSpace,
+        .imageExtent = swapChainExtent,
+        .imageArrayLayers = 1,
+        .imageUsage =
+            vk::ImageUsageFlagBits::eColorAttachment |
+            vk::ImageUsageFlagBits::eTransferDst,
         .imageSharingMode = vk::SharingMode::eExclusive,
-
         .preTransform = surfaceCapabilities.currentTransform,
         .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
         .presentMode = presentMode,
-        .clipped = true,
-        .oldSwapchain = nullptr };
+        .clipped = true
+    };
 
-    // Recuperar los handles de las imágenes creadas internamente
-    // por la swapchain. Estas imágenes serán utilizadas más adelante
-    // como destino del renderizado.
-    swapChain = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
+    swapChain = vk::raii::SwapchainKHR(device, createInfo);
+
     swapChainImages = swapChain.getImages();
-    imagesInFlight.clear();
 
-    imagesInFlight.resize(
+    imagesInFlight.assign(
         swapChainImages.size(),
-        VK_NULL_HANDLE
-    );
+        VK_NULL_HANDLE);
 
-    swapChainLayouts.assign(swapChainImages.size(), vk::ImageLayout::eUndefined);
-
-    // Comprobar que realmente se obtuvo imágenes
-    if (swapChainImages.empty())
-    {
-        throw std::runtime_error(
-            "Failed to retrieve swapchain images!");
-    }
+    swapChainLayouts.assign(
+        swapChainImages.size(),
+        vk::ImageLayout::eUndefined);
 }
+
 
 // Crear una ImageView para cada imagen de la swapchain.
     // Estas vistas serán utilizadas posteriormente como attachments
