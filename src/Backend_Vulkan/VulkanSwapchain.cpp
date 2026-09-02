@@ -3,13 +3,9 @@
 void EngineApplication::createSwapChain()
 {
     auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-
     swapChainExtent = chooseSwapExtent(surfaceCapabilities);
-
     swapChainSurfaceFormat = chooseSwapSurfaceFormat(physicalDevice.getSurfaceFormatsKHR(*surface));
-
     auto presentMode = chooseSwapPresentMode(physicalDevice.getSurfacePresentModesKHR(*surface));
-
     uint32_t minImageCount = chooseSwapMinImageCount(surfaceCapabilities);
 
     vk::SwapchainCreateInfoKHR createInfo{
@@ -30,7 +26,6 @@ void EngineApplication::createSwapChain()
     };
 
     swapChain = vk::raii::SwapchainKHR(device, createInfo);
-
     swapChainImages = swapChain.getImages();
 
     imagesInFlight.assign(
@@ -49,7 +44,6 @@ void EngineApplication::createSwapChain()
 void EngineApplication::createImageViews()
 {
     assert(swapChainImageViews.empty());
-
     swapChainImageViews.reserve(swapChainImages.size());
     for (auto& image : swapChainImages)
     {
@@ -65,12 +59,10 @@ void EngineApplication::createImageViews()
     Libera todos los recursos que dependen directamente de la SwapChain.
 
     Actualmente sólo existen:
-
         - swapChainImageViews
         - swapChain
 
     Pero más adelante también podrían incluirse:
-
         - Depth Images
         - Depth Image Views
         - MSAA Images
@@ -89,10 +81,8 @@ void EngineApplication::createImageViews()
 void EngineApplication::cleanupSwapChain()
 {
     commandBuffers.clear();
-
     graphicsPipeline = nullptr;
     pipelineLayout = nullptr;
-
     particlePipeline = nullptr;
     particlePipelineLayout = nullptr;
 
@@ -102,19 +92,15 @@ void EngineApplication::cleanupSwapChain()
     colorImageView = nullptr;
     colorImage = nullptr;
     colorImageMemory = nullptr;
-
     depthImageView = nullptr;
     depthImage = nullptr;
     depthImageMemory = nullptr;
 
     swapChainImageViews.clear();
-
     swapChainFramebuffers.clear();
     renderPass.clear();
-
     swapChainLayouts.clear();
     swapChainImages.clear();
-
     imagesInFlight.clear();
 
     swapChain = nullptr;
@@ -128,14 +114,12 @@ void EngineApplication::cleanupSwapChain()
     Reconstruye todos los recursos dependientes del tamaño de la ventana.
 
     Se ejecuta cuando:
-
         - La ventana cambia de tamaño.
         - La SwapChain se vuelve obsoleta (eErrorOutOfDateKHR).
         - La SwapChain es subóptima (eSuboptimalKHR).
         - La ventana vuelve desde un estado minimizado.
 
     Proceso:
-
         1) Esperar a que la ventana tenga un tamaño válido.
         2) Esperar a que la GPU termine cualquier trabajo pendiente.
         3) Liberar recursos antiguos de la SwapChain.
@@ -143,18 +127,14 @@ void EngineApplication::cleanupSwapChain()
         5) Crear nuevas Image Views asociadas.
 
     Caso especial: ventana minimizada
-
     Cuando una ventana se minimiza, GLFW devuelve:
-
         width  = 0
         height = 0
 
     Vulkan no permite crear una SwapChain de tamaño cero.
-
     Por ello esperamos hasta que el usuario restaure la ventana.
 
     Flujo:
-
         Resize / Minimize Event
                 ↓
         framebufferResized = true
@@ -170,7 +150,6 @@ void EngineApplication::cleanupSwapChain()
         createImageViews()
 
     Más adelante esta función también recreará:
-
         - Depth Buffers
         - MSAA Buffers
         - Render Targets
