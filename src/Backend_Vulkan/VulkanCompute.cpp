@@ -1,4 +1,4 @@
-#include "../Application/EngineApplication.h"
+#include "/Dev/Proyectos/Motores/TXEngine/src/Application/EngineApplication.h"
 #include <Renderer/ComputeUBO.h>
 #include <Renderer/Particle.h>
 #include <Core/VulkanConfig.h>
@@ -6,7 +6,7 @@
 
 void EngineApplication::createComputeDescriptorSetLayout()
 {
-	std::array layoutBindings{
+	const std::array layoutBindings{
 		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eCompute, nullptr),
 		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eCompute, nullptr),
 		vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eCompute, nullptr) };
@@ -20,7 +20,7 @@ void EngineApplication::createComputeDescriptorSetLayout()
 
 void EngineApplication::createComputePipeline()
 {
-	auto computeModule = createShaderModule(readFile("shaders/particle.comp.spv"));
+	const auto computeModule = createShaderModule(readFile("shaders/particle.comp.spv"));
 
 	vk::PushConstantRange pushConstantRange{
 		.stageFlags = vk::ShaderStageFlagBits::eCompute,
@@ -41,9 +41,10 @@ void EngineApplication::createComputePipeline()
 
 	computePipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutInfo);
 
-	vk::ComputePipelineCreateInfo pipelineInfo{};
-	pipelineInfo.stage = computeShaderStageInfo;
-	pipelineInfo.layout = *computePipelineLayout;
+	const vk::ComputePipelineCreateInfo pipelineInfo{
+		.stage = computeShaderStageInfo,
+		.layout = *computePipelineLayout
+	};
 
 	computePipeline = vk::raii::Pipeline(device, nullptr, pipelineInfo);
 }
@@ -51,45 +52,78 @@ void EngineApplication::createComputePipeline()
 void EngineApplication::createShaderStorageBuffers()
 {
 	// Initialize particles
-	std::default_random_engine     rndEngine(static_cast<unsigned>(time(nullptr)));
-	std::uniform_real_distribution rndDist(0.0f, 1.0f);
+	std::mt19937 rndEngine(static_cast<unsigned>(std::chrono::steady_clock::now().time_since_epoch().count()));
+	std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
+
+	constexpr float spawnRadius = 0.25f;
+	constexpr float minVelocity = 0.25f;
+	constexpr float velocityScale = 0.75f;
 
 	// Initial particle positions on a circle
 	std::vector<Particle> particles(PARTICLE_COUNT);
 	for (auto& particle : particles)
 	{
-		float r = 0.25f * sqrtf(rndDist(rndEngine));
-		float theta = rndDist(rndEngine) * 2.0f * 3.14159265358979323846f;
-		float x = r * cosf(theta) * HEIGHT / WIDTH;
-		float y = r * sinf(theta);
-		particle.position = glm::vec2(x, y);
-		particle.velocity = normalize(glm::vec2(x, y)) * 0.25f;
+		const float r = spawnRadius * std::sqrt(rndDist(rndEngine));
+		const float theta = rndDist(rndEngine) * glm::two_pi<float>();
+		const float x = r * std::cos(theta) * HEIGHT / WIDTH;
+		const float y = r * std::sin(theta);
+
+		particle.position = { x, y };
+
+		const float velocityMagnitude = std::max(minVelocity, r * velocityScale);
+
+		glm::vec2 dir(x, y);
+
+		if (glm::dot(dir, dir) > 0.0f)
+		{
+			dir = glm::normalize(dir);
+		}
+		else
+		{
+			dir = { 1.0f, 0.0f };
+		}
+
+		particle.velocity = dir * velocityMagnitude;
 		particle.color = glm::vec4(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
 	}
 
-	vk::DeviceSize bufferSize = sizeof(Particle) * PARTICLE_COUNT;
+	const vk::DeviceSize bufferSize = sizeof(Particle) * PARTICLE_COUNT;
 
-	// Create a staging buffer used to upload data to the gpu
-	vk::raii::Buffer       stagingBuffer({});
-	vk::raii::DeviceMemory stagingBufferMemory({});
+	vk::raii::Buffer stagingBuffer(nullptr);
+	vk::raii::DeviceMemory stagingBufferMemory(nullptr);
 	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer, stagingBufferMemory);
 
-	void* dataStaging = stagingBufferMemory.mapMemory(0, bufferSize);
-	memcpy(dataStaging, particles.data(), (size_t)bufferSize);
+	void* const mapped = stagingBufferMemory.mapMemory(0, bufferSize);
+
+	std::memcpy(mapped, particles.data(), static_cast<size_t>(bufferSize));
+
 	stagingBufferMemory.unmapMemory();
 
 	shaderStorageBuffers.clear();
 	shaderStorageBuffersMemory.clear();
 
+	shaderStorageBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
+	shaderStorageBuffersMemory.reserve(MAX_FRAMES_IN_FLIGHT);
+
 	// Copy initial particle data to all storage buffers
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
-		vk::raii::Buffer       shaderStorageBufferTemp({});
-		vk::raii::DeviceMemory shaderStorageBufferTempMemory({});
-		createBuffer(bufferSize, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal, shaderStorageBufferTemp, shaderStorageBufferTempMemory);
-		copyBuffer(stagingBuffer, shaderStorageBufferTemp, bufferSize);
-		shaderStorageBuffers.emplace_back(std::move(shaderStorageBufferTemp));
-		shaderStorageBuffersMemory.emplace_back(std::move(shaderStorageBufferTempMemory));
+		vk::raii::Buffer shaderBuffer(nullptr);
+		vk::raii::DeviceMemory shaderMemory(nullptr);
+
+		createBuffer(
+			bufferSize,
+			vk::BufferUsageFlagBits::eStorageBuffer |
+			vk::BufferUsageFlagBits::eVertexBuffer |
+			vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal,
+			shaderBuffer,
+			shaderMemory);
+
+		copyBuffer(stagingBuffer, shaderBuffer, bufferSize);
+
+		shaderStorageBuffers.emplace_back(std::move(shaderBuffer));
+		shaderStorageBuffersMemory.emplace_back(std::move(shaderMemory));
 	}
 }
 
@@ -105,7 +139,7 @@ void EngineApplication::createComputeDescriptorSets()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		size_t previousFrame = (i + MAX_FRAMES_IN_FLIGHT - 1) % MAX_FRAMES_IN_FLIGHT;
+		const size_t previousFrame = (i + MAX_FRAMES_IN_FLIGHT - 1) % MAX_FRAMES_IN_FLIGHT;
 
 		vk::DescriptorBufferInfo bufferInfo(computeUniformBuffers[i], 0, sizeof(ComputeUBO));
 		vk::DescriptorBufferInfo storageBufferInfoLastFrame(shaderStorageBuffers[previousFrame], 0, sizeof(Particle) * PARTICLE_COUNT);
@@ -133,15 +167,19 @@ void EngineApplication::createComputeDescriptorSets()
 
 		device.updateDescriptorSets(descriptorWrites, {});
 	}
+
 }
 
 void EngineApplication::createComputeCommandBuffers()
 {
 	computeCommandBuffers.clear();
-	vk::CommandBufferAllocateInfo allocInfo{};
-	allocInfo.commandPool = *commandPool;
-	allocInfo.level = vk::CommandBufferLevel::ePrimary;
-	allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+
+	const vk::CommandBufferAllocateInfo allocInfo{
+		.commandPool = *commandPool,
+		.level = vk::CommandBufferLevel::ePrimary,
+		.commandBufferCount = MAX_FRAMES_IN_FLIGHT
+	};
+
 	computeCommandBuffers = vk::raii::CommandBuffers(device, allocInfo);
 }
 
@@ -211,7 +249,7 @@ void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdB
 
 void EngineApplication::createComputeUniformBuffers()
 {
-	vk::DeviceSize bufferSize = sizeof(ComputeUBO);
+	const vk::DeviceSize bufferSize = sizeof(ComputeUBO);
 
 	computeUniformBuffers.clear();
 	computeUniformBuffersMemory.clear();
@@ -221,7 +259,7 @@ void EngineApplication::createComputeUniformBuffers()
 	computeUniformBuffersMemory.reserve(MAX_FRAMES_IN_FLIGHT);
 	computeUniformBuffersMapped.reserve(MAX_FRAMES_IN_FLIGHT);
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
 		auto [buffer, memory] =
 			createBuffer(
@@ -234,7 +272,9 @@ void EngineApplication::createComputeUniformBuffers()
 		computeUniformBuffersMemory.emplace_back(std::move(memory));
 
 		computeUniformBuffersMapped.emplace_back(
-			computeUniformBuffersMemory.back().mapMemory(0, bufferSize));
+			computeUniformBuffersMemory.back().mapMemory(
+				0,
+				bufferSize));
 	}
 }
 
@@ -255,14 +295,13 @@ void EngineApplication::createParticlePipeline()
 		.pName = "main"
 	};
 
-	vk::PipelineShaderStageCreateInfo shaderStages[] =
-	{
+	const std::array shaderStages{
 		vertShaderStageInfo,
 		fragShaderStageInfo
 	};
 
-	auto bindingDescription = Particle::getBindingDescription();
-	auto attributeDescriptions = Particle::getAttributeDescriptions();
+	const auto bindingDescription = Particle::getBindingDescription();
+	const auto attributeDescriptions = Particle::getAttributeDescriptions();
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
 		.vertexBindingDescriptionCount = 1,
@@ -344,18 +383,17 @@ void EngineApplication::createParticlePipeline()
 
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
 
-	particlePipelineLayout =
-		vk::raii::PipelineLayout(device, pipelineLayoutInfo);
+	particlePipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutInfo);
 
-	vk::Format depthFormat = findDepthFormat();
+	const vk::Format depthFormat = findDepthFormat();
 
 	vk::StructureChain<
 		vk::GraphicsPipelineCreateInfo,
 		vk::PipelineRenderingCreateInfo> pipelineInfo =
 	{
 		{
-			.stageCount = 2,
-			.pStages = shaderStages,
+			.stageCount = static_cast<uint32_t>(shaderStages.size()),
+			.pStages = shaderStages.data(),
 			.pVertexInputState = &vertexInputInfo,
 			.pInputAssemblyState = &inputAssembly,
 			.pViewportState = &viewportState,
