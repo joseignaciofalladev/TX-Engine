@@ -1,4 +1,4 @@
-#include "../Application/EngineApplication.h"
+#include "/Dev/Proyectos/Motores/TXEngine/src/Application/EngineApplication.h"
 #include <Core/VulkanConfig.h>
 
 // ------------------------------------------------------
@@ -22,10 +22,13 @@ void EngineApplication::createCommandPool()
     commandPool = vk::raii::CommandPool(device, poolInfo);
 }
 
-vk::raii::CommandBuffer EngineApplication::beginSingleTimeCommands()
+/*
+[[nodiscard]] vk::raii::CommandBuffer EngineApplication::beginSingleTimeCommands() const
 {
-    vk::CommandBufferAllocateInfo allocInfo{ .commandPool = commandPool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1 };
-    vk::raii::CommandBuffer commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
+    const vk::CommandBufferAllocateInfo allocInfo{ .commandPool = commandPool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1 };
+    auto commandBuffers = vk::raii::CommandBuffers(device, allocInfo);
+
+    vk::raii::CommandBuffer commandBuffer = std::move(commandBuffers.front());
 
     vk::CommandBufferBeginInfo beginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit };
     commandBuffer.begin(beginInfo);
@@ -37,8 +40,7 @@ void EngineApplication::endSingleTimeCommands(vk::raii::CommandBuffer&& commandB
 {
     commandBuffer.end();
 
-    vk::FenceCreateInfo fenceInfo{};
-    vk::raii::Fence fence(device, fenceInfo);
+    vk::raii::Fence fence(device, vk::FenceCreateInfo{});
 
     vk::CommandBufferSubmitInfo commandBufferInfo{
         .commandBuffer = *commandBuffer,
@@ -50,22 +52,54 @@ void EngineApplication::endSingleTimeCommands(vk::raii::CommandBuffer&& commandB
         .pCommandBufferInfos = &commandBufferInfo
     };
 
-    graphicsQueue.submit2(
-        submitInfo,
-        *fence
-    );
+    graphicsQueue.submit2(submitInfo, *fence);
 
-    vk::Result result =
-        device.waitForFences(
-            *fence,
-            VK_TRUE,
-            UINT64_MAX);
+    const vk::Result result = device.waitForFences(*fence, VK_TRUE, UINT64_MAX);
 
     if (result != vk::Result::eSuccess)
     {
-        throw std::runtime_error(
-            "Failed waiting for upload fence");
+        throw std::runtime_error("Failed waiting for upload fence.");
     }
+}
+*/
+
+vk::raii::CommandBuffer&EngineApplication::beginSingleTimeCommands()
+{
+    uploadContext.commandPool.reset();
+
+    vk::CommandBufferBeginInfo beginInfo{
+        .flags =
+            vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+    };
+
+    uploadContext.commandBuffer.begin(beginInfo);
+
+    return uploadContext.commandBuffer;
+}
+
+void EngineApplication::endSingleTimeCommands()
+{
+    uploadContext.commandBuffer.end();
+
+    device.resetFences(*uploadContext.fence);
+
+    vk::CommandBufferSubmitInfo commandBufferInfo{
+        .commandBuffer = *uploadContext.commandBuffer
+    };
+
+    vk::SubmitInfo2 submitInfo{
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos = &commandBufferInfo
+    };
+
+    graphicsQueue.submit2(
+        submitInfo,
+        *uploadContext.fence);
+
+    device.waitForFences(
+        *uploadContext.fence,
+        VK_TRUE,
+        UINT64_MAX);
 }
 
 void EngineApplication::createUploadContext()
@@ -129,7 +163,13 @@ void EngineApplication::destroyUploadContext()
 void EngineApplication::createCommandBuffers()
 {
     commandBuffers.clear();
-    vk::CommandBufferAllocateInfo allocInfo{ .commandPool = commandPool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = MAX_FRAMES_IN_FLIGHT };
+
+    const vk::CommandBufferAllocateInfo allocInfo{
+        .commandPool = commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = MAX_FRAMES_IN_FLIGHT
+    };
+
     commandBuffers = vk::raii::CommandBuffers(device, allocInfo);
 }
 
