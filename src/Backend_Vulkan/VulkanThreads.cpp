@@ -18,9 +18,7 @@ void EngineApplication::initThreads()
 	uint32_t desired = (PARTICLE_COUNT + MinParticlesPerThread - 1) / MinParticlesPerThread;
 
 	threadCount = std::clamp(desired, 1u, threadCount);
-
 	std::cout << "Initializing " << threadCount << " worker threads\n";
-
 	shouldExit.store(false, std::memory_order_release);
 
 	threadWorkReady = std::vector<std::atomic<bool>>(threadCount);
@@ -42,16 +40,13 @@ void EngineApplication::initThreads()
 	for (uint32_t i = 0; i < threadCount; ++i)
 	{
 		uint32_t start = i * particlesPerThread;
-
 		uint32_t end = std::min(start + particlesPerThread, PARTICLE_COUNT);
 
 		if (start >= PARTICLE_COUNT)
 		{
 			particleGroups[i].startIndex = PARTICLE_COUNT;
 			particleGroups[i].count = 0;
-		}
-		else
-		{
+		} else {
 			particleGroups[i].startIndex = start;
 			particleGroups[i].count = end - start;
 
@@ -73,11 +68,7 @@ void EngineApplication::initThreads()
 
 	for (uint32_t i = 0; i < threadCount; i++)
 	{
-		workerThreads.emplace_back(
-			&EngineApplication::workerThreadFunc,
-			this,
-			i);
-
+		workerThreads.emplace_back(&EngineApplication::workerThreadFunc, this, i);
 		std::cout << "Started worker thread " << i << '\n';
 	}
 }
@@ -88,33 +79,24 @@ void EngineApplication::workerThreadFunc(uint32_t threadIndex)
 	{
 		std::unique_lock<std::mutex> lock(workCompleteMutex);
 
-		workCompleteCv.wait(lock,
-			[this, threadIndex]
+		workCompleteCv.wait(lock, [this, threadIndex]
 			{
-				return shouldExit.load(std::memory_order_acquire) ||
-					threadWorkReady[threadIndex].load(std::memory_order_acquire);
+				return shouldExit.load(std::memory_order_acquire) || threadWorkReady[threadIndex].load(std::memory_order_acquire);
 			});
 
 		if (shouldExit.load(std::memory_order_acquire))
 			return;
 
 		threadWorkReady[threadIndex].store(false, std::memory_order_release);
-
 		lock.unlock();
 
 		try
 		{
 			uint32_t frame = workerFrameIndex.load(std::memory_order_acquire);
-
 			auto& cmdBuffer = resourceManager.getComputeCommandBuffer(threadIndex, frame);
-
 			const ParticleGroup& group = particleGroups[threadIndex];
 
-			recordComputeCommandBuffer(
-				cmdBuffer,
-				frame,
-				group.startIndex,
-				group.count);
+			recordComputeCommandBuffer(cmdBuffer, frame, group.startIndex, group.count);
 		}
 		catch (const std::exception& e)
 		{
