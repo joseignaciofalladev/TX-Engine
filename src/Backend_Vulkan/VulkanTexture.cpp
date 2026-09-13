@@ -480,12 +480,8 @@ void EngineApplication::transitionImageLayout(
     {
         barrier.srcStageMask = vk::PipelineStageFlagBits2::eTopOfPipe;
         barrier.srcAccessMask = {};
-
-        barrier.dstStageMask =
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-
-        barrier.dstAccessMask =
-            vk::AccessFlagBits2::eColorAttachmentWrite;
+        barrier.dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+        barrier.dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
     }
     else if (
         oldLayout == vk::ImageLayout::eColorAttachmentOptimal &&
@@ -493,12 +489,8 @@ void EngineApplication::transitionImageLayout(
     {
         barrier.srcStageMask =
             vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-
-        barrier.srcAccessMask =
-            vk::AccessFlagBits2::eColorAttachmentWrite;
-
+        barrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
         barrier.dstStageMask = vk::PipelineStageFlagBits2::eNone;
-
         barrier.dstAccessMask = {};
     }
     else if (
@@ -506,17 +498,10 @@ void EngineApplication::transitionImageLayout(
         newLayout == vk::ImageLayout::eColorAttachmentOptimal)
     {
         barrier.srcStageMask = vk::PipelineStageFlagBits2::eNone;
-
         barrier.srcAccessMask = {};
-
-        barrier.dstStageMask =
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-
-        barrier.dstAccessMask =
-            vk::AccessFlagBits2::eColorAttachmentWrite;
-    }
-    else
-    {
+        barrier.dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+        barrier.dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+    } else {
         throw std::runtime_error("Unsupported layout transition");
     }
 
