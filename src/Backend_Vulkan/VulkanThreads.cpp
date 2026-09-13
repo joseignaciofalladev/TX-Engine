@@ -73,79 +73,57 @@ void EngineApplication::initThreads()
 	}
 }
 
-void EngineApplication::workerThreadFunc(uint32_t threadIndex)
-{
-	while (true)
-	{
+void EngineApplication::workerThreadFunc(uint32_t threadIndex) {
+	while (true) {
 		std::unique_lock<std::mutex> lock(workCompleteMutex);
+		workCompleteCv.wait(lock, [this, threadIndex] {return shouldExit.load(std::memory_order_acquire) || threadWorkReady[threadIndex].load(std::memory_order_acquire);});
 
-		workCompleteCv.wait(lock, [this, threadIndex]
-			{
-				return shouldExit.load(std::memory_order_acquire) || threadWorkReady[threadIndex].load(std::memory_order_acquire);
-			});
-
-		if (shouldExit.load(std::memory_order_acquire))
-			return;
-
+		if (shouldExit.load(std::memory_order_acquire)) return;
 		threadWorkReady[threadIndex].store(false, std::memory_order_release);
 		lock.unlock();
 
-		try
-		{
+		try {
 			uint32_t frame = workerFrameIndex.load(std::memory_order_acquire);
 			auto& cmdBuffer = resourceManager.getComputeCommandBuffer(threadIndex, frame);
 			const ParticleGroup& group = particleGroups[threadIndex];
-
 			recordComputeCommandBuffer(cmdBuffer, frame, group.startIndex, group.count);
-		}
-		catch (const std::exception& e)
-		{
+			
+		} catch (const std::exception& e) {
 			std::lock_guard guard(workCompleteMutex);
-
-			if (!threadException)
-				threadException = std::current_exception();
+			if (!threadException) threadException = std::current_exception();
 		}
 
 		lock.lock();
 		threadWorkDone[threadIndex].store(true, std::memory_order_release);
-
 		lock.unlock();
 		workCompleteCv.notify_all();
 	}
 }
 
-void EngineApplication::stopThreads()
-{
+void EngineApplication::stopThreads() {
 	{
 		std::lock_guard lock(workCompleteMutex);
 		shouldExit.store(true, std::memory_order_release);
 		
-		for (uint32_t i = 0; i < threadCount; ++i)
-		{
+		for (uint32_t i = 0; i < threadCount; ++i){
 			threadWorkReady[i].store(false, std::memory_order_release);
 			threadWorkDone[i].store(true, std::memory_order_release);
 		}
 	}
 	workCompleteCv.notify_all();
 
-	for (auto& thread : workerThreads)
-	{
-		if (thread.joinable())
-		{
-			thread.join();
-		}
+	for (auto& thread : workerThreads){
+		if (thread.joinable()){thread.join();}
 	}
 	workerThreads.clear();
 }
 
-void EngineApplication::initThreadResources()
-{
+void EngineApplication::initThreadResources() {
 	resourceManager.createThreadCommandPools(device, graphicsQueueFamilyIndex, threadCount);
 	resourceManager.allocateCommandBuffers(device, threadCount, 1);
 }
 
-void EngineApplication::signalThreadsToWork()
-{
+void EngineApplication::signalThreadsToWork() {
     // Reset thread state
     for (uint32_t i = 0; i < threadCount; i++)
     {
@@ -168,7 +146,6 @@ void EngineApplication::waitForThreadsToComplete()
 				if (!threadWorkDone[i].load(std::memory_order_acquire))
 					return false;
 			}
-
 			return true;
 		});
 }
