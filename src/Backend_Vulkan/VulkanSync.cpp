@@ -43,8 +43,7 @@ void EngineApplication::createSyncObjects()
         inFlightFences.emplace_back(device, fenceInfo);
     }
 
-    for (uint32_t i = 0; i < static_cast<uint32_t>(swapChainImages.size()); ++i)
-    {
+    for (uint32_t i = 0; i < static_cast<uint32_t>(swapChainImages.size()); ++i) {
         renderFinishedSemaphores.emplace_back(device, semaphoreInfo);
     }
 }
@@ -62,24 +61,18 @@ void EngineApplication::updateUniformBuffer(uint32_t currentFrame)
     proj[1][1] *= -1;
 
     const float rotationSpeed = 0.5f;
+   
     // Update uniform buffers for each object
-    for (GameObject& object : gameObjects)
-    {
+    for (GameObject& object : gameObjects){
         object.rotation.y += rotationSpeed * deltaTime;
-
-        GraphicsUBO* ubo =
-            reinterpret_cast<GraphicsUBO*>(
-                object.uniformBuffers[currentFrame].mapped);
+        GraphicsUBO* ubo = reinterpret_cast<GraphicsUBO*>(object.uniformBuffers[currentFrame].mapped);
 
         ubo->model = object.getModelMatrix();
         ubo->view = view;
         ubo->proj = proj;
     }
 
-    auto* compute =
-        reinterpret_cast<ComputeUBO*>(
-            computeUniformBuffersMapped[currentFrame]);
-
+    auto* compute = reinterpret_cast<ComputeUBO*>(computeUniformBuffersMapped[currentFrame]);
     compute->deltaTime = deltaTime;
 }
 
@@ -95,15 +88,10 @@ void EngineApplication::updateUniformBuffer(uint32_t currentFrame)
 void EngineApplication::drawFrame()
 {
     auto fenceResult = device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
-
-    if (fenceResult != vk::Result::eSuccess)
-    {
-        throw std::runtime_error("failed to wait for fence!");
-    }
+    if (fenceResult != vk::Result::eSuccess){throw std::runtime_error("failed to wait for fence!");}
 
     // Recreate swapchain if window resized
-    if (framebufferResized)
-    {
+    if (framebufferResized){
         recreateSwapChain();
         framebufferResized = false;
         return;
@@ -111,57 +99,37 @@ void EngineApplication::drawFrame()
 
     auto [result, imageIndex] = swapChain.acquireNextImage( UINT64_MAX, *imageAvailableSemaphores[frameIndex], nullptr);
 
-    if (result == vk::Result::eErrorOutOfDateKHR)
-    {
+    if (result == vk::Result::eErrorOutOfDateKHR){
         recreateSwapChain();
         return;
-    }
-
-    else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
-    {
+    } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR){
         assert(result == vk::Result::eTimeout || result == vk::Result::eNotReady);
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    if (imagesInFlight[imageIndex] != VK_NULL_HANDLE)
-    {
-        auto result = device.waitForFences(imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
-    }
+    if (imagesInFlight[imageIndex] != VK_NULL_HANDLE){auto result = device.waitForFences(imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);}
 
     imagesInFlight[imageIndex] = vk::Fence(*inFlightFences[frameIndex]);
-
     updateUniformBuffer(frameIndex);
-
     signalThreadsToWork();
-
     recordCommandBuffer(imageIndex);
-
     waitForThreadsToComplete();
-    
+   
     std::vector<vk::CommandBuffer> computeCmdBuffers;
     computeCmdBuffers.reserve(threadCount);
     
-    for (uint32_t i = 0; i < threadCount; i++)
-    {
-        computeCmdBuffers.push_back(*resourceManager.getCommandBuffer(i));
-    }
-
-    if (computeCmdBuffers.empty())
-        return;
+    for (uint32_t i = 0; i < threadCount; i++){ computeCmdBuffers.push_back(*resourceManager.getCommandBuffer(i));}
+    if (computeCmdBuffers.empty())return;
 
     vk::SubmitInfo computeSubmit{};
     computeSubmit.commandBufferCount = static_cast<uint32_t>(computeCmdBuffers.size());
     computeSubmit.pCommandBuffers = computeCmdBuffers.data();
-
     computeSubmit.signalSemaphoreCount = 1;
     computeSubmit.pSignalSemaphores = &*computeFinishedSemaphores[frameIndex];
-
     graphicsQueue.submit(computeSubmit, nullptr);
-
     device.resetFences(*inFlightFences[frameIndex]);
 
-    vk::SemaphoreSubmitInfo waitSemaphoreInfo[2]
-    {
+    vk::SemaphoreSubmitInfo waitSemaphoreInfo[2]{
         {
             .semaphore = *imageAvailableSemaphores[frameIndex],
             .stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput
@@ -172,22 +140,15 @@ void EngineApplication::drawFrame()
         }
     };
 
-    vk::CommandBufferSubmitInfo commandBufferInfo{
-        .commandBuffer = *commandBuffers[frameIndex]
-    };
+    vk::CommandBufferSubmitInfo commandBufferInfo{.commandBuffer = *commandBuffers[frameIndex]};
 
-    vk::SemaphoreSubmitInfo signalSemaphoreInfo{
-        .semaphore = *renderFinishedSemaphores[imageIndex],
-        .stageMask = vk::PipelineStageFlagBits2::eAllGraphics
-    };
+    vk::SemaphoreSubmitInfo signalSemaphoreInfo{.semaphore = *renderFinishedSemaphores[imageIndex],.stageMask = vk::PipelineStageFlagBits2::eAllGraphics};
     
     vk::SubmitInfo2 submitInfo{
         .waitSemaphoreInfoCount = 2,
         .pWaitSemaphoreInfos = waitSemaphoreInfo,
-
         .commandBufferInfoCount = 1,
         .pCommandBufferInfos = &commandBufferInfo,
-
         .signalSemaphoreInfoCount = 1,
         .pSignalSemaphoreInfos = &signalSemaphoreInfo
     };
