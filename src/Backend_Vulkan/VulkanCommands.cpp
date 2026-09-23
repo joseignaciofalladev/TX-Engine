@@ -63,76 +63,32 @@ void EngineApplication::endSingleTimeCommands(vk::raii::CommandBuffer&& commandB
 }
 */
 
-vk::raii::CommandBuffer&EngineApplication::beginSingleTimeCommands()
-{
+vk::raii::CommandBuffer&EngineApplication::beginSingleTimeCommands(){
     uploadContext.commandPool.reset();
-
-    vk::CommandBufferBeginInfo beginInfo{
-        .flags =
-            vk::CommandBufferUsageFlagBits::eOneTimeSubmit
-    };
-
+    vk::CommandBufferBeginInfo beginInfo{.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
     uploadContext.commandBuffer.begin(beginInfo);
-
     return uploadContext.commandBuffer;
 }
 
-void EngineApplication::endSingleTimeCommands()
-{
+void EngineApplication::endSingleTimeCommands(){
     uploadContext.commandBuffer.end();
-
     device.resetFences(*uploadContext.fence);
-
-    vk::CommandBufferSubmitInfo commandBufferInfo{
-        .commandBuffer = *uploadContext.commandBuffer
-    };
-
-    vk::SubmitInfo2 submitInfo{
-        .commandBufferInfoCount = 1,
-        .pCommandBufferInfos = &commandBufferInfo
-    };
-
-    graphicsQueue.submit2(
-        submitInfo,
-        *uploadContext.fence);
-
-    device.waitForFences(
-        *uploadContext.fence,
-        VK_TRUE,
-        UINT64_MAX);
+    vk::CommandBufferSubmitInfo commandBufferInfo{.commandBuffer = *uploadContext.commandBuffer};
+    vk::SubmitInfo2 submitInfo{.commandBufferInfoCount = 1,.pCommandBufferInfos = &commandBufferInfo};
+    graphicsQueue.submit2(submitInfo, *uploadContext.fence);
+    device.waitForFences(*uploadContext.fence, VK_TRUE, UINT64_MAX);
 }
 
-void EngineApplication::createUploadContext()
-{
-    vk::CommandPoolCreateInfo poolInfo{
-        .flags =
-            vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        .queueFamilyIndex = graphicsQueueFamilyIndex
-    };
-
-    uploadContext.commandPool =
-        vk::raii::CommandPool(device, poolInfo);
-
-    vk::CommandBufferAllocateInfo allocInfo{
-        .commandPool = *uploadContext.commandPool,
-        .level = vk::CommandBufferLevel::ePrimary,
-        .commandBufferCount = 1
-    };
-
-    auto buffers =
-        device.allocateCommandBuffers(allocInfo);
-
-    uploadContext.commandBuffer =
-        std::move(buffers.front());
-
-    uploadContext.fence =
-        vk::raii::Fence(
-            device,
-            vk::FenceCreateInfo{});
+void EngineApplication::createUploadContext(){
+    vk::CommandPoolCreateInfo poolInfo{.flags =vk::CommandPoolCreateFlagBits::eResetCommandBuffer,.queueFamilyIndex = graphicsQueueFamilyIndex};
+    uploadContext.commandPool = vk::raii::CommandPool(device, poolInfo);
+    vk::CommandBufferAllocateInfo allocInfo{.commandPool = *uploadContext.commandPool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1};
+    auto buffers = device.allocateCommandBuffers(allocInfo);
+    uploadContext.commandBuffer = std::move(buffers.front());
+    uploadContext.fence = vk::raii::Fence(device, vk::FenceCreateInfo{});
 }
 
-void EngineApplication::destroyUploadContext()
-{
+void EngineApplication::destroyUploadContext(){
     uploadContext.commandBuffer = nullptr;
     uploadContext.commandPool = nullptr;
     uploadContext.fence = nullptr;
@@ -163,13 +119,11 @@ void EngineApplication::destroyUploadContext()
 void EngineApplication::createCommandBuffers()
 {
     commandBuffers.clear();
-
     const vk::CommandBufferAllocateInfo allocInfo{
         .commandPool = commandPool,
         .level = vk::CommandBufferLevel::ePrimary,
         .commandBufferCount = MAX_FRAMES_IN_FLIGHT
     };
-
     commandBuffers = vk::raii::CommandBuffers(device, allocInfo);
 }
 
@@ -195,22 +149,15 @@ void EngineApplication::createCommandBuffers()
 void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
 {
     auto& commandBuffer = commandBuffers[frameIndex];
-
     commandBuffer.reset();
-
-    const vk::CommandBufferBeginInfo beginInfo{
-        .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
-    };
-
+    const vk::CommandBufferBeginInfo beginInfo{.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
     commandBuffer.begin(beginInfo);
 
     const vk::BufferMemoryBarrier2 computeToGraphicsBarrier{
         .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
         .srcAccessMask = vk::AccessFlagBits2::eShaderStorageWrite,
-
         .dstStageMask = vk::PipelineStageFlagBits2::eVertexInput,
         .dstAccessMask = vk::AccessFlagBits2::eVertexAttributeRead,
-
         .buffer = *shaderStorageBuffers[frameIndex],
         .offset = 0,
         .size = VK_WHOLE_SIZE
@@ -222,7 +169,6 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
     };
 
     commandBuffer.pipelineBarrier2(dependencyInfo);
-
     auto& imageLayout = swapChainLayouts[imageIndex];
 
     transitionImageLayout(
@@ -236,20 +182,14 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
 
     imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
-    const vk::ClearValue clearColor =
-        vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
-
-    const vk::ClearValue clearDepth =
-        vk::ClearDepthStencilValue(1.0f, 0);
-
+    const vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+    const vk::ClearValue clearDepth = vk::ClearDepthStencilValue(1.0f, 0);
     const vk::RenderingAttachmentInfo colorAttachment{
         .imageView = colorImageView,
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-
         .resolveMode = vk::ResolveModeFlagBits::eAverage,
         .resolveImageView = swapChainImageViews[imageIndex],
         .resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eDontCare,
         .clearValue = clearColor
@@ -258,7 +198,6 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
     const vk::RenderingAttachmentInfo depthAttachment{
         .imageView = depthImageView,
         .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
-
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eDontCare,
         .clearValue = clearDepth
@@ -274,9 +213,7 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
 
     commandBuffer.beginRendering(renderingInfo);
 
-    commandBuffer.bindPipeline(
-        vk::PipelineBindPoint::eGraphics,
-        *graphicsPipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
 
     commandBuffer.setViewport(
         0,
@@ -347,6 +284,5 @@ void EngineApplication::recordCommandBuffer(uint32_t imageIndex)
         1);
 
     imageLayout = vk::ImageLayout::ePresentSrcKHR;
-
     commandBuffer.end();
 }
