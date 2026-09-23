@@ -40,38 +40,27 @@ bool EngineApplication::isDeviceSuitable(vk::raii::PhysicalDevice const& physica
             });
 
     auto features = physicalDevice.getFeatures();
-
-    return
-        supportsGraphics &&
-        supportsAllRequiredExtensions &&
-        features.samplerAnisotropy;
+    return supportsGraphics && supportsAllRequiredExtensions && features.samplerAnisotropy;
 }
 
 void EngineApplication::pickPhysicalDevice()
 {
     std::vector<vk::raii::PhysicalDevice> physicalDevices = instance.enumeratePhysicalDevices();
-
     std::cout << "Available Vulkan GPUs\n";
     std::cout << "========================================\n";
 
-    for (const auto& gpu : physicalDevices)
-    {
+    for (const auto& gpu : physicalDevices){
         auto props = gpu.getProperties();
         std::cout << "GPU: " << props.deviceName << '\n';
     }
 
     auto const devIter = std::ranges::find_if(physicalDevices, [&](auto const& physicalDevice) { return isDeviceSuitable(physicalDevice); });
-    if (devIter == physicalDevices.end())
-    {
+    if (devIter == physicalDevices.end()){
         throw std::runtime_error("failed to find a suitable GPU!");
     }
     physicalDevice = *devIter;
-
     msaaSamples = getMaxUsableSampleCount();
-
-    std::cout << "MSAA Samples: "
-        << vk::to_string(msaaSamples)
-        << '\n';
+    std::cout << "MSAA Samples: " << vk::to_string(msaaSamples) << '\n';
 }
 
 void EngineApplication::detectFeatureSupport()
@@ -87,14 +76,10 @@ void EngineApplication::detectFeatureSupport()
     {
         appInfo.dynamicRenderingSupported = true;
         std::cout << "Dynamic rendering supported via Vulkan 1.3\n";
-    }
-    else
-    {
+    } else {
         // Check for the extension on older Vulkan versions
-        for (const auto& extension : availableExtensions)
-        {
-            if (strcmp(extension.extensionName, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0)
-            {
+        for (const auto& extension : availableExtensions){
+            if (strcmp(extension.extensionName, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0){
                 appInfo.dynamicRenderingSupported = true;
                 std::cout << "Dynamic rendering supported via extension\n";
                 break;
@@ -103,18 +88,13 @@ void EngineApplication::detectFeatureSupport()
     }
 
     // Check for timeline semaphores support
-    if (deviceProperties.apiVersion >= VK_VERSION_1_2)
-    {
+    if (deviceProperties.apiVersion >= VK_VERSION_1_2){
         appInfo.timelineSemaphoresSupported = true;
         std::cout << "Timeline semaphores supported via Vulkan 1.2\n";
-    }
-    else
-    {
+    } else {
         // Check for the extension on older Vulkan versions
-        for (const auto& extension : availableExtensions)
-        {
-            if (strcmp(extension.extensionName, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) == 0)
-            {
+        for (const auto& extension : availableExtensions){
+            if (strcmp(extension.extensionName, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) == 0){
                 appInfo.timelineSemaphoresSupported = true;
                 std::cout << "Timeline semaphores supported via extension\n";
                 break;
@@ -123,18 +103,13 @@ void EngineApplication::detectFeatureSupport()
     }
 
     // Check for synchronization2 support
-    if (deviceProperties.apiVersion >= VK_VERSION_1_3)
-    {
+    if (deviceProperties.apiVersion >= VK_VERSION_1_3){
         appInfo.synchronization2Supported = true;
         std::cout << "Synchronization2 supported via Vulkan 1.3\n";
-    }
-    else
-    {
+    } else {
         // Check for the extension on older Vulkan versions
-        for (const auto& extension : availableExtensions)
-        {
-            if (strcmp(extension.extensionName, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0)
-            {
+        for (const auto& extension : availableExtensions){
+            if (strcmp(extension.extensionName, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0){
                 appInfo.synchronization2Supported = true;
                 std::cout << "Synchronization2 supported via extension\n";
                 break;
@@ -142,36 +117,25 @@ void EngineApplication::detectFeatureSupport()
         }
     }
 
-    auto featureSupport =
-        physicalDevice.getFeatures2<
-        vk::PhysicalDeviceFeatures2,
-        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto featureSupport = physicalDevice.getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 
-    appInfo.extendedDynamicStateSupported =
-        featureSupport
-        .get<
-        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
-        .extendedDynamicState;
+    appInfo.extendedDynamicStateSupported = featureSupport.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
     // Add required extensions based on feature support
-    if (appInfo.dynamicRenderingSupported && deviceProperties.apiVersion < VK_VERSION_1_3)
-    {
+    if (appInfo.dynamicRenderingSupported && deviceProperties.apiVersion < VK_VERSION_1_3){
         requiredDeviceExtension.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     }
 
-    if (appInfo.timelineSemaphoresSupported && deviceProperties.apiVersion < VK_VERSION_1_2)
-    {
+    if (appInfo.timelineSemaphoresSupported && deviceProperties.apiVersion < VK_VERSION_1_2){
         requiredDeviceExtension.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     }
 
-    if (appInfo.synchronization2Supported && deviceProperties.apiVersion < VK_VERSION_1_3)
-    {
+    if (appInfo.synchronization2Supported && deviceProperties.apiVersion < VK_VERSION_1_3){
         requiredDeviceExtension.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     }
 }
 
-void EngineApplication::printSelectedGPU()
-{
+void EngineApplication::printSelectedGPU(){
     auto props = physicalDevice.getProperties();
 
     std::cout << "\n";
