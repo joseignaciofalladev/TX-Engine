@@ -45,8 +45,7 @@ void EngineApplication::createImageViews()
 {
     assert(swapChainImageViews.empty());
     swapChainImageViews.reserve(swapChainImages.size());
-    for (auto& image : swapChainImages)
-    {
+    for (auto& image : swapChainImages){
         swapChainImageViews.emplace_back(createImageView(image, swapChainSurfaceFormat.format, vk::ImageAspectFlagBits::eColor, 1));
     }
 }
@@ -164,8 +163,7 @@ void EngineApplication::recreateSwapChain()
 
     glfwGetFramebufferSize(window, &width, &height);
 
-    while (width == 0 || height == 0)
-    {
+    while (width == 0 || height == 0){
         glfwWaitEvents();
         glfwGetFramebufferSize(window, &width, &height);
     }
@@ -193,13 +191,13 @@ void EngineApplication::recreateSwapChain()
 
 vk::Extent2D EngineApplication::chooseSwapExtent(vk::SurfaceCapabilitiesKHR const& capabilities)
 {
-    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-    {
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()){
         return capabilities.currentExtent;
     }
+    
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-
+    
     return {
         std::clamp<uint32_t>(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
         std::clamp<uint32_t>(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height) };
@@ -208,8 +206,7 @@ vk::Extent2D EngineApplication::chooseSwapExtent(vk::SurfaceCapabilitiesKHR cons
 uint32_t EngineApplication::chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const& surfaceCapabilities)
 {
     auto minImageCount = std::max(3u, surfaceCapabilities.minImageCount);
-    if ((0 < surfaceCapabilities.maxImageCount) && (surfaceCapabilities.maxImageCount < minImageCount))
-    {
+    if ((0 < surfaceCapabilities.maxImageCount) && (surfaceCapabilities.maxImageCount < minImageCount)){
         minImageCount = surfaceCapabilities.maxImageCount;
     }
     return minImageCount;
