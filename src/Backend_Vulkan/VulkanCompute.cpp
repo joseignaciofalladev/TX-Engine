@@ -74,12 +74,9 @@ void EngineApplication::createShaderStorageBuffers()
 
 		glm::vec2 dir(x, y);
 
-		if (glm::dot(dir, dir) > 0.0f)
-		{
+		if (glm::dot(dir, dir) > 0.0f){
 			dir = glm::normalize(dir);
-		}
-		else
-		{
+		} else {
 			dir = { 1.0f, 0.0f };
 		}
 
@@ -186,11 +183,7 @@ void EngineApplication::createComputeCommandBuffers()
 void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdBuffer, uint32_t frame, uint32_t startIndex, uint32_t count)
 {
 	cmdBuffer.reset();
-
-	vk::CommandBufferBeginInfo beginInfo{
-		.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
-	};
-
+	vk::CommandBufferBeginInfo beginInfo{.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
 	cmdBuffer.begin(beginInfo);
 
 	struct PushConstants
@@ -200,9 +193,7 @@ void EngineApplication::recordComputeCommandBuffer(vk::raii::CommandBuffer& cmdB
 	} pushConstants{ startIndex, count };
 
 	constexpr uint32_t WorkgroupSize = 256;
-
 	const uint32_t groupCount = (count + WorkgroupSize - 1) / WorkgroupSize;
-
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, *computePipeline);
 
 	cmdBuffer.bindDescriptorSets(
