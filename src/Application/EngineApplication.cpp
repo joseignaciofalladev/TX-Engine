@@ -3,13 +3,12 @@
 
 // ------------------------------------------------------
 // Punto de entrada de la aplicación
-// ------------------------------------------------------
 // Organiza la ejecución en etapas:
-//
 // 1. Crear ventana
 // 2. Inicializar Vulkan
 // 3. Ejecutar bucle principal
 // 4. Liberar recursos
+// ------------------------------------------------------
 void EngineApplication::run()
 {
     initWindow();
@@ -20,8 +19,8 @@ void EngineApplication::run()
 }
 
 // ------------------------------------------------------
-    // Inicialización de ventana
-    // ------------------------------------------------------
+// Inicialización de ventana
+// ------------------------------------------------------
 void EngineApplication::initWindow()
 {
     // Inicializa toda la librería GLFW.
@@ -38,12 +37,10 @@ void EngineApplication::initWindow()
     // "NO me crees un contexto OpenGL"
     // Porque vamos a usar Vulkan.
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     // Crea una ventana real del sistema operativo.
     // Parámetros:
-    //
     // WIDTH      -> ancho
     // HEIGHT     -> alto
     // "Vulkan"   -> título
@@ -56,11 +53,8 @@ void EngineApplication::initWindow()
 
     // Si la ventana no pudo crearse, abortamos inmediatamente.
     // Vulkan no puede funcionar sin superficie de presentación.
-    if (!window)
-    {
-        throw std::runtime_error(
-            "Failed to create GLFW window"
-        );
+    if (!window){
+        throw std::runtime_error("Failed to create GLFW window");
     }
 }
 
