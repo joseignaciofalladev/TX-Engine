@@ -43,58 +43,43 @@ public:
         return commandPools[threadIndex];
     }
 
-    void allocateCommandBuffers(vk::raii::Device& device, uint32_t threadCount, uint32_t buffersPerThread)
-    {
+    void allocateCommandBuffers(vk::raii::Device& device, uint32_t threadCount, uint32_t buffersPerThread){
         std::lock_guard lock(resourceMutex);
-
         commandBuffers.clear();
 
-        if (commandPools.size() < threadCount)
-        {
+        if (commandPools.size() < threadCount){
             throw std::runtime_error("Not enough command pools for thread count");
         }
 
-        for (uint32_t i = 0; i < threadCount; i++)
-        {
+        for (uint32_t i = 0; i < threadCount; i++){
             vk::CommandBufferAllocateInfo allocInfo{
                 .commandPool = *commandPools[i],
                 .level = vk::CommandBufferLevel::ePrimary,
-                .commandBufferCount = buffersPerThread };
-            try
-            {
+                .commandBufferCount = buffersPerThread 
+        }; try{
                 auto threadBuffers = device.allocateCommandBuffers(allocInfo);
-                for (auto& buffer : threadBuffers)
-                {
+                for (auto& buffer : threadBuffers){
                     commandBuffers.emplace_back(std::move(buffer));
                 }
-            }
-            catch (const std::exception&)
-            {
-                throw;        // Re-throw the exception to be caught by the caller
-            }
+            } catch (const std::exception&) {throw;} // Re-throw the exception to be caught by the caller 
         }
     }
 
-    vk::raii::CommandBuffer& getCommandBuffer(uint32_t index)
-    {
+    vk::raii::CommandBuffer& getCommandBuffer(uint32_t index){
         // No need for mutex here as each thread accesses its own command buffer
-        if (index >= commandBuffers.size())
-        {
+        if (index >= commandBuffers.size()){
             throw std::runtime_error("Command buffer index out of range: " + std::to_string(index) +
                 " (available: " + std::to_string(commandBuffers.size()) + ")");
-        }
-        return commandBuffers[index];
+        } return commandBuffers[index];
     }
 };
 
-class EngineApplication
-{
+class EngineApplication{
 public:
     void run();
 private:
-    //
+
     // Flujo principal
-    //
     void initWindow();
     void initVulkan();
     void mainLoop();
@@ -102,9 +87,7 @@ private:
     void cleanupSwapChain();
     void recreateSwapChain();
 
-    //
     // Threads
-    //
     void initThreads();
     void workerThreadFunc(uint32_t threadIndex);
     void stopThreads();
@@ -112,9 +95,7 @@ private:
     void signalThreadsToWork();
     void waitForThreadsToComplete();
 
-    //
     // Instance
-    //
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -127,9 +108,7 @@ private:
 
     std::vector<const char*> getRequiredInstanceExtensions();
 
-    //
     // Device
-    //
     bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
 
     void pickPhysicalDevice();
@@ -142,9 +121,7 @@ private:
         vk::MemoryPropertyFlags properties
     ) const;
 
-    //
     // Swapchain
-    //
     void createSwapChain();
     void createImageViews();
 
@@ -154,9 +131,7 @@ private:
 
     vk::Extent2D chooseSwapExtent(vk::SurfaceCapabilitiesKHR const& capabilities);
 
-    //
     // Pipelines
-    //
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
 
@@ -174,9 +149,7 @@ private:
 
     static std::vector<char> readFile(const std::string& filename);
 
-    //
     // Images
-    //
     void createTextureImage();
 
     void generateMipmaps(
@@ -221,20 +194,13 @@ private:
         uint32_t width,
         uint32_t height);
 
-    //
     // Models
-    //
     void loadModel();
-
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::raii::Buffer& buffer, vk::raii::DeviceMemory& bufferMemory) const;
-
     void createRenderPass();
-
     void createFramebuffers();
 
-    //
     // Buffers
-    //
     void createVertexBuffer();
     void createIndexBuffer();
     void setupGameObjects();
@@ -250,33 +216,23 @@ private:
         vk::raii::Buffer& dstBuffer,
         vk::DeviceSize size);
 
-    //
     // Descriptors
-    //
     void createDescriptorPool();
     void createDescriptorSets();
 
-    //
     // Commands
-    //
     void createCommandPool();
     void createCommandBuffers();
-
     vk::raii::CommandBuffer beginSingleTimeCommands();
-
     void endSingleTimeCommands(vk::raii::CommandBuffer&& commandBuffer);
     void recordCommandBuffer(uint32_t imageIndex);
 
-    //
     // Sync
-    //
     void createSyncObjects();
     void updateUniformBuffer(uint32_t currentImage);
     void drawFrame();
 
-    //
     // Compute
-    //
     void createComputeDescriptorSetLayout();
     void createComputePipeline();
     void createShaderStorageBuffers();
@@ -286,15 +242,12 @@ private:
     void createComputeUniformBuffers();
     void createParticlePipeline();
 
-    //
     // GLFW
-    //
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 private:
     // ------------------------------------------------------
     // Ventana GLFW
-    // ------------------------------------------------------
     // GLFWwindow es una estructura interna de GLFW.
     // Este puntero representa nuestra ventana del sistema operativo.
     GLFWwindow* window = nullptr;
@@ -318,7 +271,6 @@ private:
 
     // ------------------------------------------------------
     // Physical Device (GPU física)
-    // ------------------------------------------------------
     // Representa una GPU REAL instalada en el sistema.
     // - NVIDIA RTX 5090
     // - AMD RX 8900 XTX
@@ -339,7 +291,6 @@ private:
 
     // ------------------------------------------------------
     // Dispositivo lógico
-    // ------------------------------------------------------
     // Es la interfaz que utiliza nuestra aplicación para comunicarse con la GPU.
     // PhysicalDevice = hardware real
     // Device         = conexión Vulkan con ese hardware
@@ -349,7 +300,6 @@ private:
 
     // ------------------------------------------------------
     // Cola gráfica principal
-    // ------------------------------------------------------
     // Vulkan ejecuta trabajo mediante colas (queues).
     // Esta cola será utilizada más adelante para:
     //
@@ -390,6 +340,7 @@ private:
     vk::raii::DescriptorPool             descriptorPool = nullptr;
 
     vk::raii::CommandPool    commandPool = nullptr;
+
     // Porque cada frame necesita su propio command buffer
     std::vector<vk::raii::CommandBuffer> commandBuffers;
 
@@ -420,7 +371,6 @@ private:
 
     // ------------------------------------------------------
     // Required Device Extensions
-    // ------------------------------------------------------
     /*
         Las extensiones de instancia afectan a Vulkan globalmente.
         Las extensiones de dispositivo afectan únicamente a la GPU seleccionada.
