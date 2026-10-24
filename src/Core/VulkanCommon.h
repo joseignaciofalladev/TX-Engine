@@ -1,8 +1,6 @@
 #pragma once
 
-// ------------------------------------------------------
 // Vulkan-Hpp Configuration
-// ------------------------------------------------------
 // Vulkan-Hpp normalmente genera constructores para todas las estructuras Vulkan.
 // Al definir esta macro usamos "designated initializers" de C++20:
 // vk::ApplicationInfo appInfo{
@@ -32,9 +30,7 @@
 import vulkan_hpp;
 #endif
 
-// ------------------------------------------------------
 // GLFW
-// ------------------------------------------------------
 // GLFW necesita conocer los tipos Vulkan para crear superficies Vulkan.
 // GLFW se encargará de incluir el header C de Vulkan.
 #define GLFW_INCLUDE_VULKAN
@@ -42,9 +38,7 @@ import vulkan_hpp;
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-// ------------------------------------------------------
 // Librerías estándar
-// ------------------------------------------------------
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
